@@ -1,0 +1,19 @@
+-module(appliance).
+-export([start_appliance/4]).
+
+-export([loop/1]).
+
+% Client function to start a new appliance
+start_appliance(Name, ParentPID, Power, Clock) ->
+    spawn_monitor(?MODULE, loop, [{Name, ParentPID, Power, Clock}]).
+
+% Message receiving loop with debug code
+loop(CurrentState) -> 
+    erlang:display(CurrentState),
+    receive
+        {exit} -> 
+            erlang:display("Ending");
+        {Other} ->
+            io:format("Received: ~s~n", [Other]),
+            loop(CurrentState)
+    end.
