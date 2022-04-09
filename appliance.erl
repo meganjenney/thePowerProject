@@ -12,8 +12,8 @@ loop(CurrentState) ->
     erlang:display(CurrentState),
     receive
         {exit} -> 
-            erlang:display("Ending");
-        {Other} ->
+            io:format("Ending: ~p~n", [self()]);
+        Other ->
             io:format("Received: ~s~n", [Other]),
             loop(CurrentState)
     end.
