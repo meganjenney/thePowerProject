@@ -17,12 +17,12 @@ exit_children([{Pid, _Ref} | Rest]) ->
 % Message receiving loop with debug code
 loop(CurrentState) -> 
     erlang:display(CurrentState),
-    {MaxPower, CurrentPower, Children} = CurrentState,
+    {MaxPower, CurrentUsage, Children} = CurrentState,
     receive
-        {createApp, {Name, Power, Clock}} -> 
+        {createApp, Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, self(), Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
-            loop({MaxPower, CurrentPower, [Pid | Children]});
+            loop({MaxPower, CurrentUsage, [Pid | Children]});
         {exit} -> 
             erlang:display("Ending house and killing all children"),
             exit_children(Children);
