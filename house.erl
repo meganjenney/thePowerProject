@@ -20,11 +20,16 @@ loop(CurrentState) ->
     {MaxPower, CurrentUsage, Children} = CurrentState,
     receive
         {createApp, Name, Power, Clock} -> 
-            Pid = appliance:start_appliance(Name, self(), Power, Clock),
+            Pid = appliance:start_appliance(Name, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
             loop({MaxPower, CurrentUsage, [Pid | Children]});
+        {createBreaker, Name, MaxBreakerPower} -> 
+            % TODO: Add ability to create appliances at breaker
+            Pid = breaker:start(Name, MaxBreakerPower),
+            io:format("Created Breaker: ~p~n", [Pid]),
+            loop({MaxPower, CurrentUsage, [Pid | Children]});            
         {exit} -> 
-            erlang:display("Ending house and killing all children"),
+            io:format("Ending house and killing all children~n", []),
             exit_children(Children);
         {'DOWN', _Ref, process, Pid, normal} -> 
             io:format("Process ~p died~n", [Pid]);
