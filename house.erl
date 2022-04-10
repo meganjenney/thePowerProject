@@ -1,3 +1,21 @@
+#!/usr/bin/env escript
+%%! -name house
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Concurrent Programming (CS21)
+%%% Tufts University Spring 2022
+%%% S. Bentley, S. Cohen, M. Jenney
+%%% 
+%%% This module is the basis for a house process which manages the
+%%%     entire simulation, acting as head of a supervisor tree in the
+%%%     creation, turning on, and turning off of appliances either as
+%%%     requested by a user or as needed according to power consumption.
+%%% Integrates with user interface module to provide user visibility
+%%%     and control.
+%%% Able to create processes of Breaker and Appliance modules.
+%%% 
+%%% Last Edited 10 April 2022 by M. Jenney
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 -module(house).
 -export([start/1]).
 

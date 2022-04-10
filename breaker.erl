@@ -1,3 +1,18 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Concurrent Programming (CS21)
+%%% Tufts University Spring 2022
+%%% S. Bentley, S. Cohen, M. Jenney
+%%% 
+%%% This module serves as the framework for Breaker processes which
+%%%     supervise child appliances, manage power so its collection of
+%%%     appliances doesn't exceed a breaker's limit, and handle
+%%%     requests to create, turn on, and turn off individual appliances.
+%%% Processes of this module can only be created by House processes.
+%%% Able to create processes of Appliance modles.
+%%% 
+%%% Last Edited 10 April 2022 by M. Jenney
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 -module(breaker).
 -export([start/2]).
 

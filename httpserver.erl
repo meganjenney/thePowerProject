@@ -1,3 +1,19 @@
+%!/usr/bin/env escript
+%%! -name httpserver
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Concurrent Programming (CS21)
+%%% Tufts University Spring 2022
+%%% S. Bentley, S. Cohen, M. Jenney
+%%% 
+%%% This module defines ways for a server to handle different types
+%%%     of messages from a user and send them to an associated House
+%%%     process.
+%%% Stores a copy of the current state of the house power consumption
+%%%     and existing breakers and appliances.
+%%% 
+%%% Last Edited 10 April 2022 by M. Jenney
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 -module(httpserver).
 -export([start/1]).
 

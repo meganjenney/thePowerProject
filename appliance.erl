@@ -1,3 +1,17 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Concurrent Programming (CS21)
+%%% Tufts University Spring 2022
+%%% S. Bentley, S. Cohen, M. Jenney
+%%% 
+%%% This module is the basis for Appliance processes, which consume
+%%%     power at a specified rate and receivee external requests to
+%%%     turn power consumption on and off.
+%%% Processes of this module can be created by House and Breaker
+%%%     processes.
+%%% 
+%%% Last Edited 10 April 2022 by M. Jenney
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 -module(appliance).
 -export([start_appliance/3]).
 
