@@ -10,7 +10,7 @@
 %%% Processes of this module can only be created by House processes.
 %%% Able to create processes of Appliance modles.
 %%% 
-%%% Last Edited 10 April 2022 by M. Jenney
+%%% Last Edited 11 April 2022 by S. Bentley
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(breaker).
@@ -33,12 +33,14 @@ loop(CurrentState) ->
     erlang:display(CurrentState),
     {Name, ParentPid, MaxPower, CurrentUsage, Children} = CurrentState,
     receive
-        {createApp, ChildName, Power, Clock} -> 
+        {createApp, Name, ChildName, Power, Clock} -> 
             Pid = appliance:start_appliance(ChildName, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, [Pid | Children]});
+        {createApp, OtherBreaker, ChildName, Power, Clock} ->
+            io:format("Breaker ~p ignoring creation of ~p~n", [Name, ChildName]);
         {exit} -> 
-            io:format("Ending breaker ~p and killing all children~n", [self()]),
+            io:format("Ending breaker ~p and killing all children~n", [Name]),
             exit_children(Children);
         {'DOWN', _Ref, process, Pid, normal} -> 
             io:format("Process ~p died~n", [Pid]);

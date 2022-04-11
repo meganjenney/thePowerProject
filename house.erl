@@ -1,4 +1,4 @@
-#!/usr/bin/env escript
+%#!/usr/bin/env escript
 %%! -name house
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Concurrent Programming (CS21)
@@ -13,7 +13,7 @@
 %%%     and control.
 %%% Able to create processes of Breaker and Appliance modules.
 %%% 
-%%% Last Edited 10 April 2022 by M. Jenney
+%%% Last Edited 11 April 2022 by S. Bentley
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(house).
@@ -32,15 +32,25 @@ exit_children([{Pid, _Ref} | Rest]) ->
     Pid ! {exit},
     exit_children(Rest).
 
+forward_message(_Message, []) -> success;
+forward_message(Message, [{Pid, _Ref} | Rest]) ->
+    Pid ! Message,
+    forward_message(Message, Rest).
+
+
 % Message receiving loop with debug code
 loop(CurrentState) -> 
     erlang:display(CurrentState),
     {MaxPower, CurrentUsage, Children} = CurrentState,
     receive
-        {createApp, Name, Power, Clock} -> 
+        {createApp, house, Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
-            loop({MaxPower, CurrentUsage, [Pid | Children]});
+            loop({MaxPower, CurrentUsage, [Pid | Children]});        
+        {createApp, BreakerName, Name, Power, Clock} -> 
+            io:format("Forwarding appliance creation: ~p~n", [Name]),
+            forward_message({createApp, BreakerName, Name, Power, Clock}, Children),
+            loop(CurrentState);
         {createBreaker, Name, MaxBreakerPower} -> 
             % TODO: Add ability to create appliances at breaker
             Pid = breaker:start(Name, MaxBreakerPower),

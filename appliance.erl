@@ -9,7 +9,7 @@
 %%% Processes of this module can be created by House and Breaker
 %%%     processes.
 %%% 
-%%% Last Edited 10 April 2022 by M. Jenney
+%%% Last Edited 11 April 2022 by S. Bentley
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(appliance).
@@ -24,11 +24,13 @@ start_appliance(Name, Power, Clock) ->
 % Message receiving loop with debug code
 loop(CurrentState) -> 
     erlang:display(CurrentState),
-    {_Name, _ParentPID, _Power, _Status, _Clock} = CurrentState,
+    {Name, _ParentPID, _Power, _Status, _Clock} = CurrentState,
     receive
+        {createApp, _Breaker, ChildName, _Power, _Clock} ->
+            io:format("Appliance ~p ignoring creation of ~p~n", [Name, ChildName]);
         {exit} -> 
-            io:format("Ending: ~p~n", [self()]);
+            io:format("Ending appliance: ~p~n", [Name]);
         Other ->
-            io:format("Received: ~s~n", [Other]),
+            io:format("Received: ~p~n", [Other]),
             loop(CurrentState)
     end.
