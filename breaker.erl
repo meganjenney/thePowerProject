@@ -38,6 +38,7 @@ loop(CurrentState) ->
             io:format("Created Pid: ~p~n", [Pid]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, [Pid | Children]});
         {createApp, OtherBreaker, ChildName, Power, Clock} ->
+            % TODO: If multiple levels of breakers, add ability to forward
             io:format("Breaker ~p ignoring creation of ~p~n", [Name, ChildName]);
         {exit} -> 
             io:format("Ending breaker ~p and killing all children~n", [Name]),
