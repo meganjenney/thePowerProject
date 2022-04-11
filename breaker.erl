@@ -33,12 +33,24 @@ forward_message(Message, [{Pid, _Ref} | Rest]) ->
     Pid ! Message,
     forward_message(Message, Rest).
 
+rpc(Pid, Request) ->
+    Pid ! { Request, self() },
+    receive
+	{Pid, Response} -> Response
+    end.
 
 % Message receiving loop with debug code
 loop(CurrentState) -> 
     erlang:display(CurrentState),
     {Name, ParentPid, MaxPower, CurrentUsage, Children} = CurrentState,
     receive
+	{info, From} ->
+	    RequestInfo = fun({ChildPid, _Ref}) ->
+				  rpc(ChildPid, info)
+			  end,
+	    ChildInfo = lists:map(RequestInfo, Children),
+	    From ! {self(), {breaker, CurrentState, ChildInfo}},
+	    loop(CurrentState);
         {createApp, Name, ChildName, Power, Clock} -> 
             Pid = appliance:start_appliance(ChildName, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
@@ -57,6 +69,6 @@ loop(CurrentState) ->
             io:format("Process ~p died~n", [Pid]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, proplists:delete(Pid, Children)});  
         Other ->
-            io:format("Received: ~p~n", [Other]),
+            io:format("Received: ~w~n", [Other]),
             loop(CurrentState)
     end.

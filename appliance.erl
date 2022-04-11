@@ -26,8 +26,12 @@ loop(CurrentState) ->
     erlang:display(CurrentState),
     {Name, _ParentPID, _Power, _Status, _Clock} = CurrentState,
     receive
+	{info, From} ->
+	    From ! {self(), {appliance, CurrentState}},
+	    loop(CurrentState);
         {createApp, _Breaker, ChildName, _Power, _Clock} ->
             io:format("Appliance ~p ignoring creation of ~p~n", [Name, ChildName]);
+	    loop(CurrentState);
         {removeNode, Name} ->
             io:format("Removing appliance: ~p~n", [Name]);        
         {removeNode, OtherName} ->
@@ -36,6 +40,6 @@ loop(CurrentState) ->
         {exit} -> 
             io:format("Ending appliance: ~p~n", [Name]);
         Other ->
-            io:format("Received: ~p~n", [Other]),
+            io:format("Received: ~w~n", [Other]),
             loop(CurrentState)
     end.
