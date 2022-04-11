@@ -30,8 +30,9 @@ loop(CurrentState) ->
 	    From ! {self(), {appliance, CurrentState}},
 	    loop(CurrentState);
         {createApp, _Breaker, ChildName, _Power, _Clock} ->
-            io:format("Appliance ~p ignoring creation of ~p~n", [Name, ChildName]);
-        {exit} -> 
+            io:format("Appliance ~p ignoring creation of ~p~n", [Name, ChildName]),
+	    loop(CurrentState);
+        {exit} ->
             io:format("Ending appliance: ~p~n", [Name]);
         Other ->
             io:format("Received: ~w~n", [Other]),
