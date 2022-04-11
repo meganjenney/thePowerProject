@@ -28,6 +28,12 @@ exit_children([{Pid, _Ref} | Rest]) ->
     Pid ! {exit},
     exit_children(Rest).
 
+forward_message(_Message, []) -> success;
+forward_message(Message, [{Pid, _Ref} | Rest]) ->
+    Pid ! Message,
+    forward_message(Message, Rest).
+
+
 % Message receiving loop with debug code
 loop(CurrentState) -> 
     erlang:display(CurrentState),
@@ -37,14 +43,19 @@ loop(CurrentState) ->
             Pid = appliance:start_appliance(ChildName, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, [Pid | Children]});
-        {createApp, OtherBreaker, ChildName, Power, Clock} ->
+        {createApp, _OtherBreaker, ChildName, _Power, _Clock} ->
             % TODO: If multiple levels of breakers, add ability to forward
             io:format("Breaker ~p ignoring creation of ~p~n", [Name, ChildName]);
+        {removeNode, NodeName} ->
+            io:format("Breaker ~p forwarding remove node: ~p~n", [Name, NodeName]),
+            forward_message({removeNode, NodeName}, Children),
+            loop(CurrentState);   
         {exit} -> 
             io:format("Ending breaker ~p and killing all children~n", [Name]),
             exit_children(Children);
         {'DOWN', _Ref, process, Pid, normal} -> 
-            io:format("Process ~p died~n", [Pid]);
+            io:format("Process ~p died~n", [Pid]),
+            loop({Name, ParentPid, MaxPower, CurrentUsage, proplists:delete(Pid, Children)});  
         Other ->
             io:format("Received: ~p~n", [Other]),
             loop(CurrentState)

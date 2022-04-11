@@ -51,6 +51,10 @@ loop(CurrentState) ->
             io:format("Forwarding appliance creation: ~p~n", [Name]),
             forward_message({createApp, BreakerName, Name, Power, Clock}, Children),
             loop(CurrentState);
+        {removeNode, NodeName} ->
+            io:format("House forwarding remove node: ~p~n", [NodeName]),
+            forward_message({removeNode, NodeName}, Children),
+            loop(CurrentState);            
         {createBreaker, Name, MaxBreakerPower} -> 
             % TODO: Add ability to create appliances at breaker
             Pid = breaker:start(Name, MaxBreakerPower),
@@ -60,9 +64,10 @@ loop(CurrentState) ->
             io:format("Ending house and killing all children~n", []),
             exit_children(Children);
         {'DOWN', _Ref, process, Pid, normal} -> 
-            io:format("Process ~p died~n", [Pid]);
+            io:format("Process ~p died~n", [Pid]),
+            loop({MaxPower, CurrentUsage, proplists:delete(Pid, Children)});            
         Other ->
-            io:format("Received: ~s~n", [Other]),
+            io:format("Received: ~p~n", [Other]),
             loop(CurrentState)
     end.
 

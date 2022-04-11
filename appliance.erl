@@ -28,6 +28,11 @@ loop(CurrentState) ->
     receive
         {createApp, _Breaker, ChildName, _Power, _Clock} ->
             io:format("Appliance ~p ignoring creation of ~p~n", [Name, ChildName]);
+        {removeNode, Name} ->
+            io:format("Removing appliance: ~p~n", [Name]);        
+        {removeNode, OtherName} ->
+            io:format("Appliance ~p ignoring removal of ~p~n", [Name, OtherName]),
+            loop(CurrentState);
         {exit} -> 
             io:format("Ending appliance: ~p~n", [Name]);
         Other ->
