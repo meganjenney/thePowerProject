@@ -31,6 +31,6 @@ loop(CurrentState) ->
         {exit} -> 
             io:format("Ending appliance: ~p~n", [Name]);
         Other ->
-            io:format("Received: ~p~n", [Other]),
+            io:format("Received: ~w~n", [Other]),
             loop(CurrentState)
     end.

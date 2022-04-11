@@ -46,6 +46,6 @@ loop(CurrentState) ->
         {'DOWN', _Ref, process, Pid, normal} -> 
             io:format("Process ~p died~n", [Pid]);
         Other ->
-            io:format("Received: ~p~n", [Other]),
+            io:format("Received: ~w~n", [Other]),
             loop(CurrentState)
     end.
