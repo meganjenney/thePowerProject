@@ -17,7 +17,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(house).
--export([start/1]).
+-export([start/1, get_info/1]).
 
 -export([loop/1]).
 
@@ -37,12 +37,26 @@ forward_message(Message, [{Pid, _Ref} | Rest]) ->
     Pid ! Message,
     forward_message(Message, Rest).
 
+rpc(Pid, Request) ->
+    Pid ! { Request, self() },
+    receive
+	{Pid, Response} -> Response
+    end.
+
+get_info(Pid) -> rpc(Pid, info).
 
 % Message receiving loop with debug code
 loop(CurrentState) -> 
     erlang:display(CurrentState),
     {MaxPower, CurrentUsage, Children} = CurrentState,
     receive
+	{info, From} ->
+	    RequestInfo = fun({ChildPid, _Ref}) ->
+				  rpc(ChildPid, info)
+			  end,
+	    ChildInfo = lists:map(RequestInfo, Children),
+	    From ! {self(), {house, CurrentState, ChildInfo}},
+	    loop(CurrentState);
         {createApp, house, Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),

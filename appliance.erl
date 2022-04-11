@@ -26,6 +26,9 @@ loop(CurrentState) ->
     erlang:display(CurrentState),
     {Name, _ParentPID, _Power, _Status, _Clock} = CurrentState,
     receive
+	{info, From} ->
+	    From ! {self(), {appliance, CurrentState}},
+	    loop(CurrentState);
         {createApp, _Breaker, ChildName, _Power, _Clock} ->
             io:format("Appliance ~p ignoring creation of ~p~n", [Name, ChildName]);
         {exit} -> 
