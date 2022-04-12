@@ -1,3 +1,38 @@
-<h1>Hello, World</h1>
+<ul id="tree_root">
+</ul>
 
+<script>
+  const tree_root = document.getElementById("tree_root");
+  console.log(tree_root);
 
+  request_info(function(data) {
+      populate_tree(tree_root, data);
+  });
+
+  function populate_tree(root, data) {
+      let name = data.name ? data.name : "house";
+      let li = document.createElement('li');
+      li.textContent = name;
+      
+      if(data.type == "house" || data.type == "breaker") {
+	  root.appendChild(li);
+	  let ul = document.createElement('ul');
+	  root.appendChild(ul);
+	  for(const child of data.children) {
+	      console.log(child);
+	      populate_tree(ul, child);
+	  }
+      } else if(data.type == "appliance") {
+	  root.appendChild(li);
+      }
+  }
+  
+  function request_info(cb) {
+      let xmlHttp = new XMLHttpRequest();
+      xmlHttp.onload = function() {
+	  cb(JSON.parse(xmlHttp.responseText));
+      }
+      xmlHttp.open("GET", "/info", true);
+      xmlHttp.send(null);
+  }
+</script>
