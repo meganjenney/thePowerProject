@@ -24,10 +24,10 @@ start_appliance(Name, Power, Clock) ->
 % Message receiving loop with debug code
 loop(CurrentState) -> 
     erlang:display(CurrentState),
-    {Name, _ParentPID, _Power, _Status, _Clock} = CurrentState,
+    {Name, _ParentPID, Power, _Status, _Clock} = CurrentState,
     receive
 	{info, From} ->
-	    From ! {self(), {appliance, CurrentState}},
+	    From ! {self(), {appliance, Name, Power}},
 	    loop(CurrentState);
         {createApp, _Breaker, ChildName, _Power, _Clock} ->
             io:format("Appliance ~p ignoring creation of ~p~n", [Name, ChildName]),

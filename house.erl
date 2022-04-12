@@ -55,7 +55,7 @@ loop(CurrentState) ->
 				  rpc(ChildPid, info)
 			  end,
 	    ChildInfo = lists:map(RequestInfo, Children),
-	    From ! {self(), {house, CurrentState, ChildInfo}},
+	    From ! {self(), {house, MaxPower, CurrentUsage, ChildInfo}},
 	    loop(CurrentState);
         {createApp, house, Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, Power, Clock),
@@ -79,4 +79,3 @@ loop(CurrentState) ->
             io:format("Received: ~w~n", [Other]),
             loop(CurrentState)
     end.
-
