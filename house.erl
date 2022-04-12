@@ -13,7 +13,7 @@
 %%%     and control.
 %%% Able to create processes of Breaker and Appliance modules.
 %%% 
-%%% Last Edited 11 April 2022 by S. Bentley
+%%% Last Edited 11 April 2022 by M. Jenney
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(house).
@@ -51,25 +51,56 @@ loop(CurrentState) ->
     {MaxPower, CurrentUsage, Children} = CurrentState,
     receive
 	{info, From} ->
+        % info for UI
 	    RequestInfo = fun({ChildPid, _Ref}) ->
 				  rpc(ChildPid, info)
 			  end,
 	    ChildInfo = lists:map(RequestInfo, Children),
 	    From ! {self(), {house, CurrentState, ChildInfo}},
 	    loop(CurrentState);
+
+        %% structure
+        % add direct appliance
         {createApp, house, Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
-            loop({MaxPower, CurrentUsage, [Pid | Children]});        
+            loop({MaxPower, CurrentUsage, [Pid | Children]});   
+        % add appliance on breaker     
         {createApp, BreakerName, Name, Power, Clock} -> 
             io:format("Forwarding appliance creation: ~p~n", [Name]),
             forward_message({createApp, BreakerName, Name, Power, Clock}, Children),
             loop(CurrentState);
+        % add breaker
         {createBreaker, Name, MaxBreakerPower} -> 
             % TODO: Add ability to create appliances at breaker
             Pid = breaker:start(Name, MaxBreakerPower),
             io:format("Created Breaker: ~p~n", [Pid]),
-            loop({MaxPower, CurrentUsage, [Pid | Children]});            
+            loop({MaxPower, CurrentUsage, [Pid | Children]});
+
+        %% power status
+        % turn on appliance
+        {turnOn, BreakerName, AppName} ->
+            forward_message({turnOn, BreakerName, AppName}, Children),
+            loop(CurrentState);
+        % turn off applicance
+        {turnOff, BreakerName, AppName} ->
+            forward_message({turnOff, BreakerName, AppName}, Children),
+            loop(CurrentState);
+        % power usage update
+        {powerUpdate, Name, Power, on} ->
+            % TODO: wait until have more power if maxed
+            loop({MaxPower, CurrentUsage+Power, Children});
+        {powerUpdate, Name, Power, off} ->
+            % TODO: wait until have more power if maxed
+            loop({MaxPower, CurrentUsage-Power, Children});
+        {powerUpdate, Name, NewUsageDifference} ->
+            % TODO: wait until have more power if maxed
+            loop({MaxPower, NewUsageDifference+CurrentUsage, Children});
+        % breaker trip
+        {trip, Name, BreakerCurrentUsage-MaxBreakerPower} ->
+            % TODO: send to user
+            loop(CurrentState);
+        
         {exit} -> 
             io:format("Ending house and killing all children~n", []),
             exit_children(Children);

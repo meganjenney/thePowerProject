@@ -10,7 +10,7 @@
 %%% Processes of this module can only be created by House processes.
 %%% Able to create processes of Appliance modles.
 %%% 
-%%% Last Edited 11 April 2022 by S. Bentley
+%%% Last Edited 11 April 2022 by M. Jenney
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(breaker).
@@ -28,6 +28,11 @@ exit_children([{Pid, _Ref} | Rest]) ->
     Pid ! {exit},
     exit_children(Rest).
 
+forward_message(_Message, []) -> success;
+forward_message(Message, [{Pid, _Ref} | Rest]) ->
+    Pid ! Message,
+    forward_message(Message, Rest).
+
 rpc(Pid, Request) ->
     Pid ! { Request, self() },
     receive
@@ -40,19 +45,46 @@ loop(CurrentState) ->
     {Name, ParentPid, MaxPower, CurrentUsage, Children} = CurrentState,
     receive
 	{info, From} ->
+        %% info for UI
 	    RequestInfo = fun({ChildPid, _Ref}) ->
 				  rpc(ChildPid, info)
 			  end,
 	    ChildInfo = lists:map(RequestInfo, Children),
 	    From ! {self(), {breaker, CurrentState, ChildInfo}},
 	    loop(CurrentState);
+        
+        %% structure
+        % create appliance on current breaker
         {createApp, Name, ChildName, Power, Clock} -> 
             Pid = appliance:start_appliance(ChildName, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, [Pid | Children]});
+        % create appliance on child breaker
         {createApp, OtherBreaker, ChildName, Power, Clock} ->
             % TODO: If multiple levels of breakers, add ability to forward
             io:format("Breaker ~p ignoring creation of ~p~n", [Name, ChildName]);
+        
+        %% power status
+        % turn on appliance
+        {turnOn, BreakerName, AppName} ->
+            forward_message({turnOn, BreakerName, AppName}, Children),
+            loop(CurrentState);
+        % turn off appliance
+        {turnOff, BreakerName, AppName} ->
+            forward_message({turnOff, BreakerName, AppName}, Children),
+            loop(CurrentState);
+        % appliance power usage updates
+        {powerUpdate, AppName, ChildPower, on} ->
+            ParentPid ! {powerUpdate, Name, ChildPower},
+            loop({Name, ParentPid, MaxPower, CurrentUsage+ChildPower, Children});
+        {powerUpdate, AppName, ChildPower, off} ->
+            ParentPid ! {powerUpdate, Name, -ChildPower},
+            loop({Name, ParentPid, MaxPower, CurrentUsage-ChildPower, Children});
+        % trip from child breaker
+        {breakerTrip, OtherBreaker} ->
+            % TODO: If multiple levels of breakers, add ability to see child trip
+            loop(CurrentState);
+
         {exit} -> 
             io:format("Ending breaker ~p and killing all children~n", [Name]),
             exit_children(Children);
