@@ -12,7 +12,7 @@
 {ok, httpserver}
 > H = house:start(10.0).      % create a new house with 10.0 amps of available current
 ...
-> httpserver:start(8080, H).  % start the server running on port 8080
+> S = httpserver:start(8080, H).  % start the server running on port 8080
                               % and make pass in the house PID.
 Starting on port 8080
 <0.88.0>
