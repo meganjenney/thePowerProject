@@ -1,4 +1,4 @@
-%#!/usr/bin/env escript
+%!/usr/bin/env escript
 %%! -name house
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Concurrent Programming (CS21)
