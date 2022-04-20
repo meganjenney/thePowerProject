@@ -40,10 +40,11 @@ rpc(Pid, Request) ->
     end.
 
 % Message receiving loop with debug code
-loop(CurrentState) -> 
+loop(CurrentState) ->
     erlang:display(CurrentState),
     {Name, ParentPid, MaxPower, CurrentUsage, Children} = CurrentState,
     receive
+        %% info for UI
         {info, From} ->
             RequestInfo = fun({ChildPid, _Ref}) ->
                     rpc(ChildPid, info)
@@ -51,21 +52,48 @@ loop(CurrentState) ->
             ChildInfo = lists:map(RequestInfo, Children),
             From ! {self(), {breaker, Name, MaxPower, CurrentUsage, ChildInfo}},
             loop(CurrentState);
-        {createApp, Name, ChildName, Power, Clock} -> 
+        
+        %% structure
+        % create appliance on current breaker
+        {createApp, Name, ChildName, Power, Clock} ->
             Pid = appliance:start_appliance(ChildName, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, [Pid | Children]});
+        % trying to create appliance on another breaker
         {createApp, _OtherBreaker, ChildName, _Power, _Clock} ->
             % TODO: If multiple levels of breakers, add ability to forward
             io:format("Breaker ~p ignoring creation of ~p~n", [Name, ChildName]);
+        % trying to remove appliance
         {removeNode, NodeName} ->
             io:format("Breaker ~p forwarding remove node: ~p~n", [Name, NodeName]),
             forward_message({removeNode, NodeName}, Children),
-            loop(CurrentState);   
-        {exit} -> 
+            loop(CurrentState);
+        
+        %% power status
+        % turn on appliance
+        {turnOn, BreakerName, AppName} ->
+            forward_message({turnOn, BreakerName, AppName}, Children),
+            loop(CurrentState);
+        % turn off appliance
+        {turnOff, BreakerName, AppName} ->
+            forward_message({turnOff, BreakerName, AppName}, Children),
+            loop(CurrentState);
+        % appliance power usage updates
+        {powerUpdate, AppName, ChildPower, on} ->
+            ParentPid ! {powerUpdate, Name, ChildPower},
+            loop({Name, ParentPid, MaxPower, CurrentUsage+ChildPower, Children});
+        {powerUpdate, AppName, ChildPower, off} ->
+            ParentPid ! {powerUpdate, Name, -ChildPower},
+            loop({Name, ParentPid, MaxPower, CurrentUsage-ChildPower, Children});
+        % trip from child breaker
+        {breakerTrip, OtherBreaker} ->
+            % TODO: If multiple levels of breakers, add ability to see child trip
+            loop(CurrentState);
+
+        {exit} ->
             io:format("Ending breaker ~p and killing all children~n", [Name]),
             exit_children(Children);
-        {'DOWN', _Ref, process, Pid, normal} -> 
+        {'DOWN', _Ref, process, Pid, normal} ->
             io:format("Process ~p died~n", [Pid]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, proplists:delete(Pid, Children)});  
         Other ->

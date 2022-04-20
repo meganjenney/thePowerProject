@@ -9,7 +9,7 @@
 %%% Processes of this module can be created by House and Breaker
 %%%     processes.
 %%% 
-%%% Last Edited 11 April 2022 by S. Bentley
+%%% Last Edited 20 April 2022 by M. Jenney
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(appliance).
@@ -26,17 +26,36 @@ loop(CurrentState) ->
     erlang:display(CurrentState),
     {Name, _ParentPID, Power, _Status, _Clock} = CurrentState,
     receive
+        %% info for UI
         {info, From} ->
             From ! {self(), {appliance, Name, Power}},
             loop(CurrentState);
+
+        %% structure
+        % trying to make new clone appliance
         {createApp, _Breaker, ChildName, _Power, _Clock} ->
             io:format("Appliance ~p ignoring creation of ~p~n", [Name, ChildName]),
 	        loop(CurrentState);
+        % shutdown current appliance
         {removeNode, Name} ->
-            io:format("Removing appliance: ~p~n", [Name]);        
+            io:format("Removing appliance: ~p~n", [Name]);
+        % trying to shutdown other appliance
         {removeNode, OtherName} ->
             io:format("Appliance ~p ignoring removal of ~p~n", [Name, OtherName]),
             loop(CurrentState);
+        
+        %% power status
+        % turn on
+        {turnOn, _BreakerName, Name} ->
+            io:format("Turning appliance ~p with PID ~p ON~n", [Name, self()]),
+            ParentPID ! {powerUpdate, Name, Power, on},
+            loop({Name, ParentPID, Power, on, Clock});
+        % turn off
+        {turnOff, _BreakerName, Name} ->
+            io:format("Turning appliance ~p with PID ~p OFF~n", [Name, self()]),
+            ParentPID ! {powerUpdate, Name, Power, off},
+            loop({Name, ParentPID, Power, off, Clock});
+
         {exit} -> 
             io:format("Ending appliance: ~p~n", [Name]);
         Other ->
