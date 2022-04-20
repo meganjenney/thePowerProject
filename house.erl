@@ -50,13 +50,13 @@ loop(CurrentState) ->
     erlang:display(CurrentState),
     {MaxPower, CurrentUsage, Children} = CurrentState,
     receive
-	{info, From} ->
-	    RequestInfo = fun({ChildPid, _Ref}) ->
-				  rpc(ChildPid, info)
-			  end,
-	    ChildInfo = lists:map(RequestInfo, Children),
-	    From ! {self(), {house, MaxPower, CurrentUsage, ChildInfo}},
-	    loop(CurrentState);
+        {info, From} ->
+            RequestInfo = fun({ChildPid, _Ref}) ->
+                    rpc(ChildPid, info)
+                end,
+            ChildInfo = lists:map(RequestInfo, Children),
+            From ! {self(), {house, MaxPower, CurrentUsage, ChildInfo}},
+            loop(CurrentState);
         {createApp, house, Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
