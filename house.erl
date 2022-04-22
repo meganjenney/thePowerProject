@@ -12,12 +12,6 @@
 %%% Integrates with user interface module to provide user visibility
 %%%     and control.
 %%% Able to create processes of Breaker and Appliance modules.
-%%% 
-<<<<<<< HEAD
-%%% Last Edited 22   April 2022 by M. Jenney
-=======
-%%% Last Edited 22 April 2022 by M. Jenney
->>>>>>> b61051081946f45091df1cf46e106c7c9dfa4b98
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(house).

@@ -10,16 +10,10 @@
 %%%     process.
 %%% Stores a copy of the current state of the house power consumption
 %%%     and existing breakers and appliances.
-%%% 
-%%% Last Edited 22 April 2022 by s. Cohen
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(httpserver).
-<<<<<<< HEAD
--export([start/2, info_to_json/1]).
-=======
 -export([start/2, stop/2, info_to_json/1]).
->>>>>>> b61051081946f45091df1cf46e106c7c9dfa4b98
 
 % based on https://stackoverflow.com/a/2219330/13492694
 start(Port, HousePid) ->
@@ -28,15 +22,11 @@ start(Port, HousePid) ->
     io:format("Starting on port ~p\n", [Port]),
     spawn_link(fun () -> {ok, Sock} = gen_tcp:listen(Port, [{active, false}]),
 			 loop(Sock, State) end).
-<<<<<<< HEAD
-			 
-=======
 
 stop(Server, HousePid) -> 
 	HousePid ! {exit},
 	exit(Server).
 
->>>>>>> b61051081946f45091df1cf46e106c7c9dfa4b98
 
 
 loop(Sock, State) ->
