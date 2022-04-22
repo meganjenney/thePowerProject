@@ -96,12 +96,12 @@ loop(CurrentState) ->
             forward_message({turnOff, BreakerName, AppName}, Children),
             loop(CurrentState);
         % power usage update
-        {powerUpdate, Name, Power, on} ->
+        {powerUpdate, _Name, Power, on} ->
             checkCapacity(MaxPower, CurrentUsage, Power, Children);
-        {powerUpdate, Name, Power, off} ->
+        {powerUpdate, _Name, Power, off} ->
             % TODO: wait until have more power if maxed
             loop({MaxPower, CurrentUsage-Power, Children});
-        {powerUpdate, Name, NewUsageDifference} ->
+        {powerUpdate, _Name, NewUsageDifference} ->
             % TODO: wait until have more power if maxed
             loop({MaxPower, NewUsageDifference+CurrentUsage, Children});
         % breaker trip

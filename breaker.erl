@@ -42,7 +42,7 @@ rpc(Pid, Request) ->
 checkCapacity(Name, ParentPid, MaxPower, CurrentUsage, ChildPower, Status, Children) ->
     case MaxPower > (CurrentUsage+ChildPower) of
         true -> loop({Name, ParentPid, MaxPower, CurrentUsage+ChildPower, Status, Children});
-        false -> forward_message({turnOff, Name, all}, Children),
+        false -> forward_message({turnOff, all}, Children),
                  ParentPid ! {trip, Name, CurrentUsage},
                  loop({Name, ParentPid, MaxPower, 0, tripped, Children})
     end.
@@ -76,7 +76,8 @@ loop(CurrentState) ->
         % trying to create appliance on another breaker
         {createApp, _OtherBreaker, ChildName, _Power, _Clock} ->
             % TODO: If multiple levels of breakers, add ability to forward
-            io:format("Breaker ~p ignoring creation of ~p~n", [Name, ChildName]);
+            io:format("Breaker ~p ignoring creation of ~p~n", [Name, ChildName]),
+            loop(CurrentState);
         % trying to remove appliance
         {removeNode, NodeName} ->
             io:format("Breaker ~p forwarding remove node: ~p~n", [Name, NodeName]),

@@ -15,7 +15,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(httpserver).
--export([start/2, stop/1, info_to_json/1]).
+-export([start/2, info_to_json/1]).
 
 % based on https://stackoverflow.com/a/2219330/13492694
 start(Port, HousePid) ->
@@ -24,11 +24,7 @@ start(Port, HousePid) ->
     io:format("Starting on port ~p\n", [Port]),
     spawn_link(fun () -> {ok, Sock} = gen_tcp:listen(Port, [{active, false}]),
 			 loop(Sock, State) end).
-
-stop(Server) -> 
-	H ! {exit},
-	exit(Server).
-
+			 
 
 
 loop(Sock, State) ->
