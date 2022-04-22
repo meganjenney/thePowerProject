@@ -10,7 +10,7 @@
 %%% Processes of this module can only be created by House processes.
 %%% Able to create processes of Appliance modles.
 %%% 
-%%% Last Edited 11 April 2022 by S. Bentley
+%%% Last Edited 22 April 2022 by M. Jenney
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(breaker).
@@ -39,10 +39,18 @@ rpc(Pid, Request) ->
 	{Pid, Response} -> Response
     end.
 
+checkCapacity(Name, ParentPid, MaxPower, CurrentUsage, ChildPower, Status, Children) ->
+    case MaxPower > (CurrentUsage+ChildPower) of
+        true -> loop({Name, ParentPid, MaxPower, CurrentUsage+ChildPower, Status, Children});
+        false -> forward_message({turnOff, Name, all}, Children),
+                 ParentPid ! {trip, Name, CurrentUsage},
+                 loop({Name, ParentPid, MaxPower, 0, tripped, Children})
+    end.
+
 % Message receiving loop with debug code
 loop(CurrentState) ->
     erlang:display(CurrentState),
-    {Name, ParentPid, MaxPower, CurrentUsage, Children} = CurrentState,
+    {Name, ParentPid, MaxPower, CurrentUsage, Status, Children} = CurrentState,
     receive
         %% info for UI
         {info, From} ->
@@ -50,15 +58,21 @@ loop(CurrentState) ->
                     rpc(ChildPid, info)
                 end,
             ChildInfo = lists:map(RequestInfo, Children),
-            From ! {self(), {breaker, Name, MaxPower, CurrentUsage, ChildInfo}},
+            From ! {self(), {breaker, Name, MaxPower, CurrentUsage, Status, ChildInfo}},
             loop(CurrentState);
         
         %% structure
         % create appliance on current breaker
         {createApp, Name, ChildName, Power, Clock} ->
-            Pid = appliance:start_appliance(ChildName, Power, Clock),
-            io:format("Created Pid: ~p~n", [Pid]),
-            loop({Name, ParentPid, MaxPower, CurrentUsage, [Pid | Children]});
+            case Status == on of
+                false ->
+                    io:format("Cannot add appliance ~p on tripped breaker ~p~n", [ChildName, Name]),
+                    loop(CurrentState);
+                true ->
+                    Pid = appliance:start_appliance(ChildName, Power, Clock),
+                    io:format("Created Pid: ~p~n", [Pid]),
+                    loop({Name, ParentPid, MaxPower, CurrentUsage, Status, [Pid | Children]})
+            end;
         % trying to create appliance on another breaker
         {createApp, _OtherBreaker, ChildName, _Power, _Clock} ->
             % TODO: If multiple levels of breakers, add ability to forward
@@ -72,21 +86,31 @@ loop(CurrentState) ->
         %% power status
         % turn on appliance
         {turnOn, BreakerName, AppName} ->
-            forward_message({turnOn, BreakerName, AppName}, Children),
+            case Status == on of
+                false ->
+                    io:format("Attempting to turn on appliance on tripped breaker ~p~n", [Name]);
+                true ->
+                    forward_message({turnOn, BreakerName, AppName}, Children)
+            end,
             loop(CurrentState);
         % turn off appliance
         {turnOff, BreakerName, AppName} ->
             forward_message({turnOff, BreakerName, AppName}, Children),
             loop(CurrentState);
         % appliance power usage updates
-        {powerUpdate, AppName, ChildPower, on} ->
+        {powerUpdate, _AppName, ChildPower, on} ->
             ParentPid ! {powerUpdate, Name, ChildPower},
-            loop({Name, ParentPid, MaxPower, CurrentUsage+ChildPower, Children});
-        {powerUpdate, AppName, ChildPower, off} ->
+            % check status of breaker capacity
+            checkCapacity(Name, ParentPid, MaxPower, CurrentUsage, ChildPower, Status, Children);
+        {powerUpdate, _AppName, ChildPower, off} ->
             ParentPid ! {powerUpdate, Name, -ChildPower},
-            loop({Name, ParentPid, MaxPower, CurrentUsage-ChildPower, Children});
+            loop({Name, ParentPid, MaxPower, CurrentUsage-ChildPower, Status, Children});
+        {turnOff, all} ->
+            io:format("House trip registered on breaker ~p~n", [Name]),
+            forward_message({turnOff, all}, Children),
+            loop({Name, ParentPid, MaxPower, 0, shutdown, Children});
         % trip from child breaker
-        {breakerTrip, OtherBreaker} ->
+        {breakerTrip, _OtherBreaker} ->
             % TODO: If multiple levels of breakers, add ability to see child trip
             loop(CurrentState);
 
@@ -95,7 +119,7 @@ loop(CurrentState) ->
             exit_children(Children);
         {'DOWN', _Ref, process, Pid, normal} ->
             io:format("Process ~p died~n", [Pid]),
-            loop({Name, ParentPid, MaxPower, CurrentUsage, proplists:delete(Pid, Children)});  
+            loop({Name, ParentPid, MaxPower, CurrentUsage, Status, proplists:delete(Pid, Children)});  
         Other ->
             io:format("Received: ~w~n", [Other]),
             loop(CurrentState)

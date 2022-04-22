@@ -9,7 +9,7 @@
 %%% Processes of this module can be created by House and Breaker
 %%%     processes.
 %%% 
-%%% Last Edited 20 April 2022 by M. Jenney
+%%% Last Edited 22 April 2022 by M. Jenney
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(appliance).
@@ -24,7 +24,7 @@ start_appliance(Name, Power, Clock) ->
 % Message receiving loop with debug code
 loop(CurrentState) -> 
     erlang:display(CurrentState),
-    {Name, _ParentPID, Power, _Status, _Clock} = CurrentState,
+    {Name, ParentPID, Power, _Status, Clock} = CurrentState,
     receive
         %% info for UI
         {info, From} ->
@@ -46,6 +46,10 @@ loop(CurrentState) ->
         
         %% power status
         % turn on
+        % breaker trip
+        {turnOff, all} ->
+            io:format("A parent breaker of appliance ~p has tripped~n", [Name]);
+            loop({Name, ParentPID, Power, off, Clock});
         {turnOn, _BreakerName, Name} ->
             io:format("Turning appliance ~p with PID ~p ON~n", [Name, self()]),
             ParentPID ! {powerUpdate, Name, Power, on},
@@ -55,6 +59,7 @@ loop(CurrentState) ->
             io:format("Turning appliance ~p with PID ~p OFF~n", [Name, self()]),
             ParentPID ! {powerUpdate, Name, Power, off},
             loop({Name, ParentPID, Power, off, Clock});
+        
 
         {exit} -> 
             io:format("Ending appliance: ~p~n", [Name]);

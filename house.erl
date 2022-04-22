@@ -13,7 +13,7 @@
 %%%     and control.
 %%% Able to create processes of Breaker and Appliance modules.
 %%% 
-%%% Last Edited 11 April 2022 by S. Bentley
+%%% Last Edited 22   April 2022 by M. Jenney
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(house).
@@ -44,6 +44,13 @@ rpc(Pid, Request) ->
     end.
 
 get_info(Pid) -> rpc(Pid, info).
+
+checkCapacity(MaxPower, CurrentUsage, ChildPower, Children) ->
+    case MaxPower > (CurrentUsage+ChildPower) of
+        true -> loop({MaxPower, CurrentUsage+ChildPower, Children});
+        false -> forward_message({turnOff, all},  Children),
+                loop({MaxPower, 0, Children})
+    end.
 
 % Message receiving loop with debug code
 loop(CurrentState) ->
@@ -93,8 +100,7 @@ loop(CurrentState) ->
             loop(CurrentState);
         % power usage update
         {powerUpdate, Name, Power, on} ->
-            % TODO: wait until have more power if maxed
-            loop({MaxPower, CurrentUsage+Power, Children});
+            checkCapacity(MaxPower, CurrentUsage, Power, Children);
         {powerUpdate, Name, Power, off} ->
             % TODO: wait until have more power if maxed
             loop({MaxPower, CurrentUsage-Power, Children});
@@ -102,9 +108,9 @@ loop(CurrentState) ->
             % TODO: wait until have more power if maxed
             loop({MaxPower, NewUsageDifference+CurrentUsage, Children});
         % breaker trip
-        {trip, Name, BreakerCurrentUsage-MaxBreakerPower} ->
-            % TODO: send to user
-            loop(CurrentState);
+        {trip, BreakerName, BreakerUsage} ->
+            io:format("Breaker ~p on house has tripped~n", [BreakerName]),
+            loop({MaxPower, CurrentUsage-BreakerUsage, Children});
 
         {exit} ->
             io:format("Ending house and killing all children~n", []),
