@@ -107,10 +107,14 @@
       }
   }
 
-  function create_node(name, buttons) {
+  function create_node(data, buttons) {
+      let name = data.name ? data.name : "house";
+      let usage_string = data.current_usage.toString()
+	  + (data.max_power ? " of " + data.max_power.toString() : "");
+
       let li = document.createElement('li');
       let label_span = document.createElement('span');
-      label_span.textContent = name;
+      label_span.textContent = name + ": " + usage_string;
       label_span.setAttribute('class', 'label');
       let buttons_span = document.createElement('span');
       buttons_span.setAttribute('class', 'buttons');
@@ -127,9 +131,9 @@
   }
 
   function populate_tree(root, data) {
-      let name = data.name ? data.name : "house";
+
       if(data.type == "house" || data.type == "breaker") {
-	  let child = create_node(name, ["new appliance", "new breaker", "delete"]);
+	  let child = create_node(data, ["new appliance", "new breaker", "delete"]);
 	  let ul = document.createElement('ul');
 	  child.appendChild(ul);
 
@@ -139,7 +143,7 @@
 	      populate_tree(ul, child);
 	  }
       } else if(data.type == "appliance") {
-	  let child = create_node(name, ["delete"]);
+	  let child = create_node(data, ["delete"]);
 
 	  root.appendChild(child);
       }

@@ -113,7 +113,7 @@ info_to_json({breaker, Name, MaxPower, CurrentUsage, ChildInfo}) ->
 info_to_json({appliance, Name, Power}) ->
     io_lib:format("{ \"type\": \"appliance\", "
 		  ++ "\"name\": \"~s\", "
-		  ++ "\"power\": ~f }", 
+		  ++ "\"current_usage\": ~f }", 
 		  [Name, float(Power)]);
 info_to_json(V) -> 
     io:format("Unknown info shape: ~w", [V]),
