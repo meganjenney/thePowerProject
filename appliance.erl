@@ -48,7 +48,7 @@ loop(CurrentState) ->
         % turn on
         % breaker trip
         {turnOff, all} ->
-            io:format("A parent breaker of appliance ~p has tripped~n", [Name]);
+            io:format("A parent breaker of appliance ~p has tripped~n", [Name]),
             loop({Name, ParentPID, Power, off, Clock});
         {turnOn, _BreakerName, Name} ->
             io:format("Turning appliance ~p with PID ~p ON~n", [Name, self()]),
