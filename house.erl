@@ -13,7 +13,11 @@
 %%%     and control.
 %%% Able to create processes of Breaker and Appliance modules.
 %%% 
+<<<<<<< HEAD
 %%% Last Edited 20 April 2022 by S. Bentley
+=======
+%%% Last Edited 22   April 2022 by M. Jenney
+>>>>>>> aea3a8716a4f860f4f6697dbf811946db0aadc5e
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(house).
@@ -22,7 +26,7 @@
 -export([loop/1]).
 
 % Spawn house process
-start(MaxPower) -> 
+start(MaxPower) ->
     % TODO: Decide whether to spawn separate process for house
     spawn(?MODULE, loop, [{MaxPower, 0, []}]).
 
@@ -45,11 +49,19 @@ rpc(Pid, Request) ->
 
 get_info(Pid) -> rpc(Pid, info).
 
+checkCapacity(MaxPower, CurrentUsage, ChildPower, Children) ->
+    case MaxPower > (CurrentUsage+ChildPower) of
+        true -> loop({MaxPower, CurrentUsage+ChildPower, Children});
+        false -> forward_message({turnOff, all},  Children),
+                loop({MaxPower, 0, Children})
+    end.
+
 % Message receiving loop with debug code
-loop(CurrentState) -> 
+loop(CurrentState) ->
     erlang:display(CurrentState),
     {MaxPower, CurrentUsage, Children} = CurrentState,
     receive
+        %% info for UI
         {info, From} ->
             RequestInfo = fun({ChildPid, _Ref}) ->
                     rpc(ChildPid, info)
@@ -57,27 +69,54 @@ loop(CurrentState) ->
             ChildInfo = lists:map(RequestInfo, Children),
             From ! {self(), {house, MaxPower, CurrentUsage, ChildInfo}},
             loop(CurrentState);
-        {createApp, house, Name, Power, Clock} -> 
+        {createApp, "house", Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
-            loop({MaxPower, CurrentUsage, [Pid | Children]});        
-        {createApp, BreakerName, Name, Power, Clock} -> 
+            loop({MaxPower, CurrentUsage, [Pid | Children]});
+        % add appliance on breaker
+        {createApp, BreakerName, Name, Power, Clock} ->
             io:format("Forwarding appliance creation: ~p~n", [Name]),
             forward_message({createApp, BreakerName, Name, Power, Clock}, Children),
             loop(CurrentState);
+        % remove appliance
         {removeNode, NodeName} ->
             io:format("House forwarding remove node: ~p~n", [NodeName]),
             forward_message({removeNode, NodeName}, Children),
-            loop(CurrentState);            
-        {createBreaker, Name, MaxBreakerPower} -> 
+            loop(CurrentState);
+        % add breaker
+        {createBreaker, Name, MaxBreakerPower} ->
             % TODO: Add ability to create appliances at breaker
             Pid = breaker:start(Name, MaxBreakerPower),
             io:format("Created Breaker: ~p~n", [Pid]),
-            loop({MaxPower, CurrentUsage, [Pid | Children]});            
-        {exit} -> 
+            loop({MaxPower, CurrentUsage, [Pid | Children]});
+        
+        %% power status
+        % turn on appliance
+        {turnOn, BreakerName, AppName} ->
+            forward_message({turnOn, BreakerName, AppName}, Children),
+            loop(CurrentState);
+        % turn off applicance
+        {turnOff, BreakerName, AppName} ->
+            forward_message({turnOff, BreakerName, AppName}, Children),
+            loop(CurrentState);
+        % power usage update
+        {powerUpdate, Name, Power, on} ->
+            checkCapacity(MaxPower, CurrentUsage, Power, Children);
+        {powerUpdate, Name, Power, off} ->
+            % TODO: wait until have more power if maxed
+            loop({MaxPower, CurrentUsage-Power, Children});
+        {powerUpdate, Name, NewUsageDifference} ->
+            % TODO: wait until have more power if maxed
+            loop({MaxPower, NewUsageDifference+CurrentUsage, Children});
+        % breaker trip
+        {trip, BreakerName, BreakerUsage} ->
+            io:format("Breaker ~p on house has tripped~n", [BreakerName]),
+            loop({MaxPower, CurrentUsage-BreakerUsage, Children});
+
+        {exit} ->
             io:format("Ending house and killing all children~n", []),
             exit_children(Children);
-        {'DOWN', _Ref, process, Pid, normal} -> 
+        {'DOWN', _Ref, process, Pid, normal} ->
             io:format("Process ~p died~n", [Pid]),
             loop({MaxPower, CurrentUsage, proplists:delete(Pid, Children)});            
         Other ->

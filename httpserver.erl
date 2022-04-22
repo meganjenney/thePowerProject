@@ -22,8 +22,8 @@ start(Port, HousePid) ->
     {ok, IndexBinary} = file:read_file("./index.html"),
     State = {IndexBinary, HousePid},
     io:format("Starting on port ~p\n", [Port]),
-    spawn(fun () -> {ok, Sock} = gen_tcp:listen(Port, [{active, false}]),
-		    loop(Sock, State) end).
+    spawn_link(fun () -> {ok, Sock} = gen_tcp:listen(Port, [{active, false}]),
+			 loop(Sock, State) end).
 
 stop(Server) -> 
 	H ! {exit},
@@ -37,23 +37,47 @@ loop(Sock, State) ->
     gen_tcp:controlling_process(Conn, Handler),
     loop(Sock, State).
 
+parse_query_string("") -> [];
+parse_query_string(Str) ->
+    lists:map(fun (Pair) ->
+		      [ Key, Value ] = string:split(Pair, "="),
+		      { Key, Value } end,
+	      string:split(Str, "&", all)).
+
 handle(Conn, State) ->
     {_IndexBinary, HousePid} = State,
     {ok, Bin} = gen_tcp:recv(Conn, 0),
-    {Method, Endpoint} =
-	case re:run(Bin, "(?<METHOD>GET|POST) /(?<ENDPOINT>[[:alnum:]]*)", 
-		    [{capture,['METHOD','ENDPOINT'],list}]) of
-	    {match, [M, E]} -> {M, E};
-	    _ -> io:format("no match~n")
-	end,
-    case {Method, Endpoint} of
-	{"GET", []} ->
+    [ FirstLine | _ ] = string:split(Bin, "\r\n"),
+    [ Method, URL, _ ] = string:split(FirstLine, " ", all),
+    [ Endpoint | QueryString ] = string:split(URL, "?"),
+    KeyValuePairs = parse_query_string(QueryString),
+    case { Method, Endpoint } of
+	{"GET", "/"} ->
 	    {ok, IndexBinary} = file:read_file("./index.html"),
 	    gen_tcp:send(Conn, html_response(IndexBinary));
-	{"GET", "info"} ->
-	    JsonText = info_to_json(house:get_info(HousePid)),
-	    gen_tcp:send(Conn, json_response(list_to_binary(JsonText)));
+	{"GET", "/info"} ->
+     	    JsonText = info_to_json(house:get_info(HousePid)),
+     	    gen_tcp:send(Conn, json_response(list_to_binary(JsonText)));
+	{"POST", "/new_appliance"} ->
+	    Parent = proplists:get_value("parent", KeyValuePairs),
+	    Name = proplists:get_value("name", KeyValuePairs),
+	    {Power, []} = string:to_float(proplists:get_value("power", KeyValuePairs)),
+	    {Clock, []} = string:to_float(proplists:get_value("clock", KeyValuePairs)),
+	    HousePid ! {createApp, Parent, Name, Power, Clock},
+	    gen_tcp:send(Conn, "HTTP/1.0 200 OK");
+	{"POST", "/new_breaker"} ->
+	    Name = proplists:get_value("name", KeyValuePairs),
+	    {Power, []} = string:to_float(proplists:get_value("power", KeyValuePairs)),
+	    HousePid ! {createBreaker, Name, Power};
+	{"POST", "/delete"} ->
+	    Name = proplists:get_value("name", KeyValuePairs),
+	    HousePid ! {removeNode, Name};
 	_ ->
+	    io:format("unknown endpoint: ~s ~s~n", [Method, Endpoint]),
+	    lists:foreach(fun (Elem) ->
+				  {Key, Value} = Elem,
+				  io:format("query parameter: ~s <- ~s~n", [Key, Value])
+			  end, KeyValuePairs),
 	    gen_tcp:send(Conn, "HTTP/1.0 404 Not Found")
     end,
     gen_tcp:close(Conn).
@@ -83,19 +107,21 @@ info_to_json({house, MaxPower, CurrentUsage, ChildInfo}) ->
 			    [float(MaxPower), float(CurrentUsage)]),
     ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end, ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
-info_to_json({breaker, Name, MaxPower, CurrentUsage, ChildInfo}) ->
+info_to_json({breaker, Name, MaxPower, CurrentUsage, Status, ChildInfo}) ->
     OwnInfo = io_lib:format("{ \"type\": \"breaker\", "
 			    ++ "\"name\": \"~s\", "
 			    ++ "\"max_power\": ~f, "
 			    ++ "\"current_usage\": ~f, "
-			    ++ "\"children\": [", 
-			    [Name, float(MaxPower), float(CurrentUsage)]),
+			    ++ "\"status\": \"~s\", "
+			    ++ "\"children\": [",
+			    [Name, float(MaxPower), float(CurrentUsage), 
+			     atom_to_list(Status)]),
     ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end, ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
 info_to_json({appliance, Name, Power}) ->
     io_lib:format("{ \"type\": \"appliance\", "
 		  ++ "\"name\": \"~s\", "
-		  ++ "\"power\": ~f }", 
+		  ++ "\"current_usage\": ~f }", 
 		  [Name, float(Power)]);
 info_to_json(V) -> 
     io:format("Unknown info shape: ~w", [V]),
