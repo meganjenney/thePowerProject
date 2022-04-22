@@ -101,13 +101,15 @@ info_to_json({house, MaxPower, CurrentUsage, ChildInfo}) ->
 			    [float(MaxPower), float(CurrentUsage)]),
     ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end, ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
-info_to_json({breaker, Name, MaxPower, CurrentUsage, ChildInfo}) ->
+info_to_json({breaker, Name, MaxPower, CurrentUsage, Status, ChildInfo}) ->
     OwnInfo = io_lib:format("{ \"type\": \"breaker\", "
 			    ++ "\"name\": \"~s\", "
 			    ++ "\"max_power\": ~f, "
 			    ++ "\"current_usage\": ~f, "
-			    ++ "\"children\": [", 
-			    [Name, float(MaxPower), float(CurrentUsage)]),
+			    ++ "\"status\": \"~s\", "
+			    ++ "\"children\": [",
+			    [Name, float(MaxPower), float(CurrentUsage), 
+			     atom_to_list(Status)]),
     ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end, ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
 info_to_json({appliance, Name, Power}) ->
