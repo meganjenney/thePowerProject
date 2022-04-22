@@ -9,8 +9,6 @@
       cursor: pointer;
       opacity: 0;
       transition-property: opacity;
-      transition-delay: 0.1s;
-      transition-duration: 0.1s;
       font-size: 10pt;
   }
 
@@ -27,7 +25,6 @@
       padding: 0.1em;
       opacity: 0.5;
       transition-property: opacity;
-      transition-duration: 0.1s;
       background-color: #dddddd;
       border: solid;
       border-width: 1px;
@@ -80,13 +77,34 @@
   const tree_root = document.getElementById("tree_root");
   console.log(tree_root);
 
-  request_info(function(data) {
-      populate_tree(tree_root, data);
-  });
+  setInterval(function() {
+      request_info(function(data) {
+	  tree_root.innerHTML = "";
+	  populate_tree(tree_root, data);
+      });
+  }, 1000);
+
+  function request_action(url) {
+      let xmlHttp = new XMLHttpRequest();
+      xmlHttp.open("POST", url, true);
+      xmlHttp.send(null);
+  }
 
   function handle_click(node_name, button_name) {
-      console.log(button_name + ' was pressed on ' + node_name);
-      window.prompt("message", "default response");
+      if(button_name == "new appliance") {
+	  let parent = node_name;
+	  let name = "appliance" + Date.now();
+	  let power = "1.0";
+	  let clock = "1.0";
+	  request_action(`/new_appliance?parent=${parent}&name=${name}&power=${power}&clock=${clock}`);
+      } else if(button_name == "new breaker") {
+	  let name = "breaker" + Date.now();
+	  let power = "1.0";
+	  request_action(`/new_breaker?name=${name}&power=${power}`);
+      } else if(button_name == "delete") {
+	  let name = node_name;
+	  request_action(`/delete?name=${name}`);
+      }
   }
 
   function create_node(name, buttons) {

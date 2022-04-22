@@ -65,10 +65,7 @@ loop(CurrentState) ->
             ChildInfo = lists:map(RequestInfo, Children),
             From ! {self(), {house, MaxPower, CurrentUsage, ChildInfo}},
             loop(CurrentState);
-        
-        %% structure
-        % add direct appliance
-        {createApp, house, Name, Power, Clock} ->
+        {createApp, "house", Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
             loop({MaxPower, CurrentUsage, [Pid | Children]});
