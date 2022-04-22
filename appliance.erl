@@ -9,11 +9,7 @@
 %%% Processes of this module can be created by House and Breaker
 %%%     processes.
 %%% 
-<<<<<<< HEAD
-%%% Last Edited 20 April 2022 by S. Bentley
-=======
 %%% Last Edited 22 April 2022 by M. Jenney
->>>>>>> aea3a8716a4f860f4f6697dbf811946db0aadc5e
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(appliance).

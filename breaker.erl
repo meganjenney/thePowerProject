@@ -10,11 +10,7 @@
 %%% Processes of this module can only be created by House processes.
 %%% Able to create processes of Appliance modles.
 %%% 
-<<<<<<< HEAD
-%%% Last Edited 20 April 2022 by S. Bentley
-=======
 %%% Last Edited 22 April 2022 by M. Jenney
->>>>>>> aea3a8716a4f860f4f6697dbf811946db0aadc5e
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(breaker).

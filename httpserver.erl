@@ -11,11 +11,11 @@
 %%% Stores a copy of the current state of the house power consumption
 %%%     and existing breakers and appliances.
 %%% 
-%%% Last Edited 10 April 2022 by M. Jenney
+%%% Last Edited 22 April 2022 by s. Cohen
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(httpserver).
--export([start/2, stop/1, info_to_json/1]).
+-export([start/2, stop/2, info_to_json/1]).
 
 % based on https://stackoverflow.com/a/2219330/13492694
 start(Port, HousePid) ->
@@ -25,8 +25,8 @@ start(Port, HousePid) ->
     spawn_link(fun () -> {ok, Sock} = gen_tcp:listen(Port, [{active, false}]),
 			 loop(Sock, State) end).
 
-stop(Server) -> 
-	H ! {exit},
+stop(Server, HousePid) -> 
+	HousePid ! {exit},
 	exit(Server).
 
 
