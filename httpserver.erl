@@ -23,7 +23,6 @@ start(Port, HousePid) ->
     spawn_link(fun () -> {ok, Sock} = gen_tcp:listen(Port, [{active, false}]),
 			 loop(Sock, State) end).
 
-
 loop(Sock, State) ->
     {ok, Conn} = gen_tcp:accept(Sock),
     Handler = spawn(fun () -> handle(Conn, State) end),
