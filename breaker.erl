@@ -39,7 +39,8 @@ rpc(Pid, Request) ->
 
 checkCapacity(Name, ParentPid, MaxPower, CurrentUsage, ChildPower, Status, Children) ->
     case MaxPower > (CurrentUsage+ChildPower) of
-        true -> loop({Name, ParentPid, MaxPower, CurrentUsage+ChildPower, Status, Children});
+        true  -> ParentPid ! {powerUpdate, Name, ChildPower, on},
+                 loop({Name, ParentPid, MaxPower, CurrentUsage+ChildPower, Status, Children});
         false -> forward_message({turnOff, all}, Children),
                  ParentPid ! {trip, Name, CurrentUsage},
                  loop({Name, ParentPid, MaxPower, 0, tripped, Children})
@@ -98,7 +99,6 @@ loop(CurrentState) ->
             loop(CurrentState);
         % appliance power usage updates
         {powerUpdate, _AppName, ChildPower, on} ->
-            ParentPid ! {powerUpdate, Name, ChildPower},
             % check status of breaker capacity
             checkCapacity(Name, ParentPid, MaxPower, CurrentUsage, ChildPower, Status, Children);
         {powerUpdate, _AppName, ChildPower, off} ->
