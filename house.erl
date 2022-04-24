@@ -21,7 +21,6 @@
 
 % Spawn house process
 start(MaxPower) ->
-    % TODO: Decide whether to spawn separate process for house
     spawn(?MODULE, loop, [{MaxPower, 0, []}]).
 
 % Helper function to tell all children processes to exit
