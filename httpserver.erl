@@ -25,8 +25,8 @@ start(Port, HousePid) ->
 
 stop(Server, HousePid) -> 
 	HousePid ! {exit},
-	exit(Server).
-
+	exit(Server, exit)
+	true.
 
 
 loop(Sock, State) ->

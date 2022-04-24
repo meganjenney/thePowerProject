@@ -2,13 +2,14 @@
 
 ## Running the Simulator
 ```erlang
-> make:all().                   % compile all modules
-Recompile: appliance
-Recompile: breaker
-Recompile: house
-Recompile: httpserver
-Recompile: make
-up_to_date
+> c(house).                   % compile the house module
+{ok, house}
+> c(breaker).                 % compile the breaker module
+{ok, house}
+> c(appliance).               % compile the appliance module
+{ok, house}
+> c(httpserver).              % compile the httpserver
+{ok, httpserver}
 
 > H = house:start(10.0).      % create a new house with 10.0 amps of available current
 ...
@@ -26,7 +27,7 @@ You can see the webpage by navigating to `localhost` at port 8080
 
 To shutdown the web server, type:
 ``` erlang
-> exit(S, exit)
+> httpserver:stop(S, H).
 true
 >
 ```
