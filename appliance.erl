@@ -8,8 +8,6 @@
 %%%     turn power consumption on and off.
 %%% Processes of this module can be created by House and Breaker
 %%%     processes.
-%%% 
-%%% Last Edited 22 April 2022 by M. Jenney
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(appliance).

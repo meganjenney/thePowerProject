@@ -9,8 +9,6 @@
 %%%     requests to create, turn on, and turn off individual appliances.
 %%% Processes of this module can only be created by House processes.
 %%% Able to create processes of Appliance modles.
-%%% 
-%%% Last Edited 22 April 2022 by M. Jenney
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(breaker).
