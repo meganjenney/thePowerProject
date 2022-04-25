@@ -69,6 +69,16 @@
   ul#tree_root li:last-child:before {
       border-left:2px solid rgb(100,100,100);
   }
+
+  .shutdown,
+  .off {
+      text-decoration: line-through;
+      background-color: #d1585e;
+  }
+
+  .on {
+      background-color: #9ae080;
+  }
 </style>
 <ul id="tree_root">
 </ul>
@@ -115,13 +125,14 @@
 
   function create_node(data, buttons) {
       let name = data.name ? data.name : "house";
+      let status = data.status ? data.status : "";
       let usage_string = data.current_usage.toString()
-	  + (data.max_power ? " of " + data.max_power.toString() : "");
+	  + (data.max_power ? "A / " + data.max_power.toString() : "A");
 
       let li = document.createElement('li');
       let label_span = document.createElement('span');
       label_span.textContent = name + ": " + usage_string;
-      label_span.setAttribute('class', 'label');
+      label_span.setAttribute('class', 'label ' + status);
       let buttons_span = document.createElement('span');
       buttons_span.setAttribute('class', 'buttons');
       for(const button_name of buttons) {

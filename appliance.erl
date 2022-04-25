@@ -21,11 +21,11 @@ start_appliance(Name, Power, Clock) ->
     
 % Message receiving loop with debug code
 loop(CurrentState) -> 
-    {Name, ParentPID, Power, _Status, Clock} = CurrentState,
+    {Name, ParentPID, Power, Status, Clock} = CurrentState,
     receive
         %% info for UI
         {info, From} ->
-            From ! {self(), {appliance, Name, Power}},
+            From ! {self(), {appliance, Name, Power, Status}},
             loop(CurrentState);
 
         %% structure

@@ -124,11 +124,12 @@ info_to_json({breaker, Name, MaxPower, CurrentUsage, Status, ChildInfo}) ->
 			     atom_to_list(Status)]),
     ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end, ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
-info_to_json({appliance, Name, Power}) ->
+info_to_json({appliance, Name, Power, Status}) ->
     io_lib:format("{ \"type\": \"appliance\", "
 		  ++ "\"name\": \"~s\", "
-		  ++ "\"current_usage\": ~f }", 
-		  [Name, float(Power)]);
-info_to_json(V) -> 
+		  ++ "\"current_usage\": ~f, "
+		  ++ "\"status\": \"~s\" }",
+		  [Name, float(Power), atom_to_list(Status)]);
+info_to_json(V) ->
     io:format("Unknown info shape: ~w", [V]),
     io_lib:format("{ \"type\": \"error\" }").
