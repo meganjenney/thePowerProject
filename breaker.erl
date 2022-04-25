@@ -40,11 +40,11 @@ rpc(Pid, Request) ->
 checkCapacity({Name, ParentPid, MaxPower, CurrentUsage, Status, Children}, {AppName, AppPower}) ->
     case Status == on of
         true ->
-            case MaxPower > (CurrentUsage+AppPower) of
+            case MaxPower >= (CurrentUsage+AppPower) of
                 true  -> ParentPid ! {powerUpdate, on, {AppName, AppPower}},
                         loop({Name, ParentPid, MaxPower, CurrentUsage+AppPower, Status, Children});
                 false -> forward_message({turnOff, all}, Children),
-                        ParentPid ! {trip, CurrentUsage},
+                        ParentPid ! {trip, Name, CurrentUsage},
                         loop({Name, ParentPid, MaxPower, 0, tripped, Children})
             end;
         false ->

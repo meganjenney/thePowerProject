@@ -43,7 +43,7 @@ rpc(Pid, Request) ->
 get_info(Pid) -> rpc(Pid, info).
 
 checkCapacity({MaxPower, CurrentUsage, Children}, {_AppName, AppPower}) ->
-    case MaxPower > (CurrentUsage+AppPower) of
+    case MaxPower >= (CurrentUsage+AppPower) of
         true -> loop({MaxPower, CurrentUsage+AppPower, Children});
         false -> forward_message({turnOff, all},  Children),
                 loop({MaxPower, 0, Children})
@@ -80,7 +80,7 @@ loop(CurrentState) ->
         {createBreaker, Name, MaxBreakerPower} ->
             % TODO: Add ability to create appliances at breaker
             Pid = breaker:start(Name, MaxBreakerPower),
-            io:format("Created Breaker: ~p~n", [Pid]),
+            io:format("Created Breaker: ~s (~p)~n", [Name, Pid]),
             loop({MaxPower, CurrentUsage, [Pid | Children]});
         
         %% power status
