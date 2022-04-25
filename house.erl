@@ -42,9 +42,9 @@ rpc(Pid, Request) ->
 
 get_info(Pid) -> rpc(Pid, info).
 
-checkCapacity(MaxPower, CurrentUsage, ChildPower, Children) ->
-    case MaxPower > (CurrentUsage+ChildPower) of
-        true -> loop({MaxPower, CurrentUsage+ChildPower, Children});
+checkCapacity({MaxPower, CurrentUsage, Children}, {_AppName, AppPower}) ->
+    case MaxPower > (CurrentUsage+AppPower) of
+        true -> loop({MaxPower, CurrentUsage+AppPower, Children});
         false -> forward_message({turnOff, all},  Children),
                 loop({MaxPower, 0, Children})
     end.
@@ -93,14 +93,11 @@ loop(CurrentState) ->
             forward_message({turnOff, AppName}, Children),
             loop(CurrentState);
         % power usage update
-        {powerUpdate, _Name, Power, on} ->
-            checkCapacity(MaxPower, CurrentUsage, Power, Children);
-        {powerUpdate, _Name, Power, off} ->
+        {powerUpdate, on, AppInfo} ->
+            checkCapacity(CurrentState, AppInfo);
+        {powerUpdate, off, {_AppName, AppPower}} ->
             % TODO: wait until have more power if maxed
-            loop({MaxPower, CurrentUsage-Power, Children});
-        {powerUpdate, _Name, NewUsageDifference} ->
-            % TODO: wait until have more power if maxed
-            loop({MaxPower, NewUsageDifference+CurrentUsage, Children});
+            loop({MaxPower, CurrentUsage-AppPower, Children});
         % breaker trip
         {trip, BreakerName, BreakerUsage} ->
             io:format("Breaker ~p on house has tripped~n", [BreakerName]),

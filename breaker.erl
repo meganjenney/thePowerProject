@@ -37,13 +37,19 @@ rpc(Pid, Request) ->
 	{Pid, Response} -> Response
     end.
 
-checkCapacity(Name, ParentPid, MaxPower, CurrentUsage, ChildPower, Status, Children) ->
-    case MaxPower > (CurrentUsage+ChildPower) of
-        true  -> ParentPid ! {powerUpdate, Name, ChildPower, on},
-                 loop({Name, ParentPid, MaxPower, CurrentUsage+ChildPower, Status, Children});
-        false -> forward_message({turnOff, all}, Children),
-                 ParentPid ! {trip, Name, CurrentUsage},
-                 loop({Name, ParentPid, MaxPower, 0, tripped, Children})
+checkCapacity({Name, ParentPid, MaxPower, CurrentUsage, Status, Children}, {AppName, AppPower}) ->
+    case Status == on of
+        true ->
+            case MaxPower > (CurrentUsage+AppPower) of
+                true  -> ParentPid ! {powerUpdate, on, {AppName, AppPower}},
+                        loop({Name, ParentPid, MaxPower, CurrentUsage+AppPower, Status, Children});
+                false -> forward_message({turnOff, all}, Children),
+                        ParentPid ! {trip, CurrentUsage},
+                        loop({Name, ParentPid, MaxPower, 0, tripped, Children})
+            end;
+        false ->
+            io:format("Attempting to turn appliance ~s on in tripped breaker ~s~n", [AppName, Name]),
+            loop({Name, ParentPid, MaxPower, CurrentUsage, Status, Children})
     end.
 
 % Message receiving loop with debug code
@@ -102,12 +108,12 @@ loop(CurrentState) ->
             forward_message({turnOff, AppName}, Children),
             loop(CurrentState);
         % appliance power usage updates
-        {powerUpdate, _AppName, ChildPower, on} ->
+        {powerUpdate, on, AppInfo} ->
             % check status of breaker capacity
-            checkCapacity(Name, ParentPid, MaxPower, CurrentUsage, ChildPower, Status, Children);
-        {powerUpdate, _AppName, ChildPower, off} ->
-            ParentPid ! {powerUpdate, Name, -ChildPower},
-            loop({Name, ParentPid, MaxPower, CurrentUsage-ChildPower, Status, Children});
+            checkCapacity(CurrentState, AppInfo);
+        {powerUpdate, off, {AppName, AppPower}} ->
+            ParentPid ! {powerUpdate, off, {AppName, AppPower}},
+            loop({Name, ParentPid, MaxPower, CurrentUsage-AppPower, Status, Children});
         % trip from child breaker
         {breakerTrip, _OtherBreaker} ->
             % TODO: If multiple levels of breakers, add ability to see child trip
