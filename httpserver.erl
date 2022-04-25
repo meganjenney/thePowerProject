@@ -20,10 +20,18 @@ start(Port, HousePid) ->
     {ok, IndexBinary} = file:read_file("./index.html"),
     State = {IndexBinary, HousePid},
     io:format("Starting on port ~p\n", [Port]),
-    spawn_link(fun () -> {ok, Sock} = gen_tcp:listen(Port, [{active, false}]),
+    spawn_link(fun () -> {ok, Sock} = gen_tcp:listen(Port, [{active, false},
+							    {reuseaddr, true}]),
 			 loop(Sock, State) end).
 
 loop(Sock, State) ->
+    receive
+	{exit} ->
+	    gen_tcp:close(Sock),
+	    exit(self(), normal);
+	_ -> ok
+    after 0 -> ok
+    end,
     {ok, Conn} = gen_tcp:accept(Sock),
     Handler = spawn(fun () -> handle(Conn, State) end),
     gen_tcp:controlling_process(Conn, Handler),

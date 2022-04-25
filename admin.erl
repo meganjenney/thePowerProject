@@ -20,5 +20,5 @@ start(MaxPower, Port) ->
 % Stops house and associated server
 stop() ->
     house ! {exit},
-    exit(houseserver),
+    houseserver ! {exit},
     true.
