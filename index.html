@@ -103,13 +103,23 @@
   function handle_click(node_name, button_name) {
       if(button_name == "new appliance") {
 	  let parent = node_name;
-	  let name = "appliance" + Date.now();
-	  let power = "1.0";
+	  let name = prompt("appliance name");
+	  let power = prompt("appliance power");
+	  if(!/\d+\.\d+/.test(power)) {
+	      alert("Invalid float literal: " + power)
+	      return;
+	  }
+
 	  let clock = "1.0";
 	  request_action(`/new_appliance?parent=${parent}&name=${name}&power=${power}&clock=${clock}`);
       } else if(button_name == "new breaker") {
-	  let name = "breaker" + Date.now();
-	  let power = "1.0";
+	  let name = prompt("breaker name");
+	  let power = prompt("breaker maximum power");
+	  if(!/\d+\.\d+/.test(power)) {
+	      alert("Invalid float literal: " + power)
+	      return;
+	  }
+
 	  request_action(`/new_breaker?name=${name}&power=${power}`);
       } else if(button_name == "delete") {
 	  let name = node_name;
