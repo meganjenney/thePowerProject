@@ -21,7 +21,6 @@ start_appliance(Name, Power, Clock) ->
     
 % Message receiving loop with debug code
 loop(CurrentState) -> 
-    erlang:display(CurrentState),
     {Name, ParentPID, Power, _Status, Clock} = CurrentState,
     receive
         %% info for UI

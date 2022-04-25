@@ -48,7 +48,6 @@ checkCapacity(Name, ParentPid, MaxPower, CurrentUsage, ChildPower, Status, Child
 
 % Message receiving loop with debug code
 loop(CurrentState) ->
-    erlang:display(CurrentState),
     {Name, ParentPid, MaxPower, CurrentUsage, Status, Children} = CurrentState,
     receive
         %% info for UI
