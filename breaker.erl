@@ -84,18 +84,22 @@ loop(CurrentState) ->
             loop(CurrentState);
         
         %% power status
+        {turnOff, all} ->
+            io:format("House trip registered on breaker ~p~n", [Name]),
+            forward_message({turnOff, all}, Children),
+            loop({Name, ParentPid, MaxPower, 0, shutdown, Children});
         % turn on appliance
-        {turnOn, BreakerName, AppName} ->
+        {turnOn, AppName} ->
             case Status == on of
                 false ->
                     io:format("Attempting to turn on appliance on tripped breaker ~p~n", [Name]);
                 true ->
-                    forward_message({turnOn, BreakerName, AppName}, Children)
+                    forward_message({turnOn, AppName}, Children)
             end,
             loop(CurrentState);
         % turn off appliance
-        {turnOff, BreakerName, AppName} ->
-            forward_message({turnOff, BreakerName, AppName}, Children),
+        {turnOff, AppName} ->
+            forward_message({turnOff, AppName}, Children),
             loop(CurrentState);
         % appliance power usage updates
         {powerUpdate, _AppName, ChildPower, on} ->
@@ -104,10 +108,6 @@ loop(CurrentState) ->
         {powerUpdate, _AppName, ChildPower, off} ->
             ParentPid ! {powerUpdate, Name, -ChildPower},
             loop({Name, ParentPid, MaxPower, CurrentUsage-ChildPower, Status, Children});
-        {turnOff, all} ->
-            io:format("House trip registered on breaker ~p~n", [Name]),
-            forward_message({turnOff, all}, Children),
-            loop({Name, ParentPid, MaxPower, 0, shutdown, Children});
         % trip from child breaker
         {breakerTrip, _OtherBreaker} ->
             % TODO: If multiple levels of breakers, add ability to see child trip

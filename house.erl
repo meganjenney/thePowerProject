@@ -85,12 +85,12 @@ loop(CurrentState) ->
         
         %% power status
         % turn on appliance
-        {turnOn, BreakerName, AppName} ->
-            forward_message({turnOn, BreakerName, AppName}, Children),
+        {turnOn, AppName} ->
+            forward_message({turnOn, AppName}, Children),
             loop(CurrentState);
         % turn off applicance
-        {turnOff, BreakerName, AppName} ->
-            forward_message({turnOff, BreakerName, AppName}, Children),
+        {turnOff, AppName} ->
+            forward_message({turnOff, AppName}, Children),
             loop(CurrentState);
         % power usage update
         {powerUpdate, _Name, Power, on} ->

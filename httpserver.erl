@@ -64,8 +64,14 @@ handle(Conn, State) ->
 	{"POST", "/delete"} ->
 	    Name = proplists:get_value("name", KeyValuePairs),
 	    HousePid ! {removeNode, Name};
+	{"POST", "/turn_on"} ->
+		Name = proplists:get_value("name", KeyValuePairs),
+		HousePid ! {turnOn, Name};
+	{"POST", "/turn_off"} ->
+		Name = proplists:get_value("name", KeyValuePairs),
+		HousePid ! {turnOff, Name};
 	_ ->
-	    io:format("unknown endpoint: ~s ~s~n", [Method, Endpoint]),
+	    io:format("unknown endpoint: Method ->~s<- Ept->~s<-~n", [Method, Endpoint]),
 	    lists:foreach(fun (Elem) ->
 				  {Key, Value} = Elem,
 				  io:format("query parameter: ~s <- ~s~n", [Key, Value])

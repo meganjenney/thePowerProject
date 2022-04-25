@@ -104,6 +104,12 @@
       } else if(button_name == "delete") {
 	  let name = node_name;
 	  request_action(`/delete?name=${name}`);
+      } else if(button_name == "turn on") {
+      let name = node_name;
+      request_action(`/turn_on?name=${name}`);
+      } else if(button_name == "turn off") {
+      let name = node_name;
+      request_action(`/turn_off?name=${name}`);
       }
   }
 
@@ -143,7 +149,7 @@
 	      populate_tree(ul, child);
 	  }
       } else if(data.type == "appliance") {
-	  let child = create_node(data, ["delete"]);
+	  let child = create_node(data, ["turn on", "turn off", "delete"]);
 
 	  root.appendChild(child);
       }
