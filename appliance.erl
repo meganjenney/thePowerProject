@@ -17,7 +17,7 @@
 
 % Client function to start a new appliance
 start_appliance(Name, Power, Clock) ->
-    spawn_monitor(?MODULE, loop, [{Name, self(), Power, on, Clock}]).
+    spawn_monitor(?MODULE, loop, [{Name, self(), Power, off, Clock}]).
     
 % Message receiving loop with debug code
 loop(CurrentState) -> 

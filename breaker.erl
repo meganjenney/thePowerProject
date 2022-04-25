@@ -80,6 +80,7 @@ loop(CurrentState) ->
         {removeNode, NodeName} ->
             io:format("Breaker ~p forwarding remove node: ~p~n", [Name, NodeName]),
             forward_message({removeNode, NodeName}, Children),
+            % TODO remove power used by appliance when removed
             loop(CurrentState);
         
         %% power status
