@@ -49,12 +49,18 @@ loop(CurrentState) ->
             loop({Name, ParentPID, Power, off, Clock});
         {turnOn, Name} ->
             io:format("Turning appliance ~p with PID ~p ON~n", [Name, self()]),
-            ParentPID ! {powerUpdate, on, {Name, Power}},
+            case Status of
+                on -> io:format("Appliance ~p already ON~n", [Name]);
+                off -> ParentPID ! {powerUpdate, on, {Name, Power}}
+            end,           
             loop({Name, ParentPID, Power, on, Clock});
         % turn off
         {turnOff, Name} ->
             io:format("Turning appliance ~p with PID ~p OFF~n", [Name, self()]),
-            ParentPID ! {powerUpdate, off, {Name, Power}},
+            case Status of
+                off -> io:format("Appliance ~p already OFF~n", [Name]);
+                on -> ParentPID ! {powerUpdate, off, {Name, Power}}
+            end,
             loop({Name, ParentPID, Power, off, Clock});
         
 
