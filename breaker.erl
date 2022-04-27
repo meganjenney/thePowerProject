@@ -21,10 +21,14 @@ start(Name, MaxPower) ->
     spawn_monitor(?MODULE, loop, [{Name, self(), MaxPower, 0, on, []}]).
 
 % Helper function to tell all children processes to exit
-exit_children([]) -> success;
-exit_children([{Pid, _Ref} | Rest]) ->
+exit_children([], CurrentUsage) -> CurrentUsage;
+exit_children([{Pid, _Ref} | Rest], CurrentUsage) ->
     Pid ! {exit},
-    exit_children(Rest).
+    receive 
+        {'DOWN', _Ref, process, Pid, {normal, Power}} -> 
+            io:format("Process ~p died~n on exit", [Pid]),
+            exit_children(Rest, CurrentUsage - Power)
+    end.
 
 forward_message(_Message, []) -> success;
 forward_message(Message, [{Pid, _Ref} | Rest]) ->
@@ -82,6 +86,13 @@ loop(CurrentState) ->
             % TODO: If multiple levels of breakers, add ability to forward
             io:format("Breaker ~p ignoring creation of ~p~n", [Name, ChildName]),
             loop(CurrentState);
+
+        % Removing breaker - TODO fix so turns off all children, then exits
+        {removeNode, Name} ->
+            io:format("Removing breaker: ~p~n", [Name]),
+            newUsage = exit_children(Children, CurrentUsage),
+            exit({normal, newUsage});
+        
         % trying to remove appliance
         {removeNode, NodeName} ->
             io:format("Breaker ~p forwarding remove node: ~p~n", [Name, NodeName]),
@@ -120,8 +131,9 @@ loop(CurrentState) ->
 
         {exit} ->
             io:format("Ending breaker ~p and killing all children~n", [Name]),
-            exit_children(Children);
-        {'DOWN', _Ref, process, Pid, normal} ->
+            newUsage = exit_children(Children, CurrentUsage),
+            exit({normal, newUsage});
+        {'DOWN', _Ref, process, Pid, {normal, _Power}} ->
             io:format("Process ~p died~n", [Pid]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, Status, proplists:delete(Pid, Children)});  
         Other ->

@@ -70,9 +70,16 @@ loop(CurrentState) ->
         {exit} -> 
             io:format("Ending appliance: ~p~n", [Name]),
             case Status of
-                on -> ParentPID ! {powerUpdate, off, {Name, Power}};
-                off -> none
+                on -> exit({normal, Power});
+                off -> exit({normal, 0})
             end;
+        %{exit, ParentPID} -> % TODO IP
+         %   io:format("Ending appliance ~p with rpc ~n", [Name]),
+          %  case Status of
+           %     on -> ParentPID ! {powerUpdate, off, {Name, Power}};
+            %    off -> none
+            %end;
+            %ParentPID ! {} 
         Other ->
             io:format("Received: ~w~n", [Other]),
             loop(CurrentState)
