@@ -70,22 +70,49 @@
       border-left:2px solid rgb(100,100,100);
   }
 
-  .shutdown,
-  .off {
-      text-decoration: line-through;
-      background-color: #d1585e;
+  .tripped::before {
+      content: "tripped";
+      background-color: red;
   }
 
-  .on {
-      background-color: #9ae080;
+  .off::before {
+      content: "off";
+      background-color: gray;
+  }
+
+  .on::before {
+      content: "on";
+      background-color: green;
+  }
+
+  .off::before,
+  .on::before,
+  .tripped::before {
+      color: white;
+      font-size: 10pt;
+      margin-right: 10px;
+      padding-left: 2px;
+      padding-right: 2px;
+      border-radius: 2px;
+  }
+
+  canvas {
+      top: 10px;
+      right: 10px;
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      background-color: white;
+      margin: 10px;
+      box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
   }
 </style>
-<div style="display: flex;">
+<h2>ThePowerProject</h2>
+<h3>Power Analyzer</h3>
 <ul id="tree_root">
 </ul>
-<canvas id="canvas" width=200 height=200>
+<canvas id="canvas" width=300 height=300>
 </canvas>
-</div>
 
 <script>
 
@@ -109,7 +136,7 @@ const approved_colors = [
     "#424242"
 ];
 
-const history_length = 10;
+const history_length = 30;
 const tree_root = document.getElementById("tree_root");
 
 const c = document.getElementById("canvas");
@@ -160,13 +187,26 @@ function max(a, b) {
 }
 
 function draw_history() {
-    const padding = 5;
+    const padding = 20;
+    const text_offset = 5;
 
     const max_power = max_power_in_history();
-    const v_scale = (c.height - padding * 2) / max(max_power, 1);
+    const v_scale = (c.height - padding * 2) / max(Math.ceil(max_power), 1);
     const h_scale = (c.width  - padding * 2) / history_length;
 
     ctx.clearRect(0, 0, c.width, c.height);
+    ctx.lineWidth = 1.0;
+    ctx.strokeStyle = "#000000";
+    ctx.beginPath();
+    ctx.rect(padding, padding, c.width - padding * 2, c.height - padding * 2);
+    ctx.stroke();
+
+    ctx.textBaseline = "hanging";
+    ctx.textAlign = "end";
+    ctx.fillText(max_power.toString() + " A", padding - text_offset, padding + text_offset);
+    ctx.fillText("0 A", padding - text_offset, c.height - padding - text_offset);
+    ctx.fillText(t + " s", c.width - padding + text_offset, c.height - padding + text_offset);
+
     for(const node in graph_history) {
 	let history = graph_history[node];
 	ctx.beginPath();
@@ -198,7 +238,7 @@ function remove_from_history(name) {
 
 function update_graph_history(data, t) {
     let name = data.name ? data.name : "house";
-    let power = data.current_usage.toString();
+    let power = data.current_usage;
     let status = data.status ? data.status : "";
 
     if(graph_history[name]) {
