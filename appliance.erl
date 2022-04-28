@@ -73,12 +73,6 @@ loop(CurrentState) ->
                 on -> ParentPID ! {powerUpdate, off, {Name, Power}};
                 off -> none
             end;
-        {exit, ParentPid} -> 
-            io:format("Ending appliance with rpc: ~p~n", [Name]),
-            case Status of
-                on -> ParentPID ! {self(), Power};
-                off -> ParentPID ! {self(), 0.0}
-            end;
         Other ->
             io:format("Received: ~w~n", [Other]),
             loop(CurrentState)
