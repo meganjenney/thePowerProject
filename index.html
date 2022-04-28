@@ -141,9 +141,20 @@ const tree_root = document.getElementById("tree_root");
 
 const c = document.getElementById("canvas");
 const ctx = c.getContext("2d");
+
 let graph_history = {};
 let t = 0;
-console.log(tree_root);
+
+let hovered_node = null;
+function set_hovered(name) {
+    hovered_node = name;
+    draw_history();
+}
+
+function clear_hovered() {
+    hovered_node = null;
+    draw_history();
+}
 
 setInterval(function() {
     request_info(function(data) {
@@ -186,13 +197,36 @@ function max(a, b) {
     return a > b ? a : b;
 }
 
+  function plot_line(history, max_power, padding, color) {
+      const v_scale = (c.height - padding * 2) / max(Math.ceil(max_power), 1);
+      const h_scale = (c.width  - padding * 2) / history_length;
+
+      ctx.beginPath();
+
+      ctx.strokeStyle = color;
+      ctx.moveTo(0, 0);
+
+      for(let i = 0; i < history.length; ++i) {
+	  let offset = t - history[i][0];
+	  let power = history[i][1];
+
+	  const x = c.width - (offset * h_scale + padding);
+	  const y = c.height - (power * v_scale + padding);
+	  if(i == 0) {
+	      ctx.moveTo(x, y);
+	  } else {
+	      ctx.lineTo(x, y);
+	  }
+      }
+
+      ctx.stroke();
+  }
+
 function draw_history() {
     const padding = 20;
     const text_offset = 5;
 
     const max_power = max_power_in_history();
-    const v_scale = (c.height - padding * 2) / max(Math.ceil(max_power), 1);
-    const h_scale = (c.width  - padding * 2) / history_length;
 
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.lineWidth = 1.0;
@@ -206,28 +240,20 @@ function draw_history() {
     ctx.fillText(max_power.toString() + " A", padding - text_offset, padding + text_offset);
     ctx.fillText("0 A", padding - text_offset, c.height - padding - text_offset);
     ctx.fillText(t + " s", c.width - padding + text_offset, c.height - padding + text_offset);
-
+    ctx.lineWidth = 2.0;
     for(const node in graph_history) {
-	let history = graph_history[node];
-	ctx.beginPath();
-
-	ctx.strokeStyle = name_to_color(node);
-	ctx.moveTo(0, 0);
-	ctx.lineWidth = 2.0;
-	for(let i = 0; i < history.length; ++i) {
-	    let offset = t - history[i][0];
-	    let power = history[i][1];
-
-	    const x = c.width - (offset * h_scale + padding);
-	    const y = c.height - (power * v_scale + padding);
-	    if(i == 0) {
-		ctx.moveTo(x, y);
-	    } else {
-		ctx.lineTo(x, y);
-	    }
+	if(hovered_node == node) {
+	    // we will render the hovered node's line after all the others
+	    break;
 	}
+	let history = graph_history[node];
+	plot_line(history, max_power, padding, name_to_color(node));
+    }
 
-	ctx.stroke();
+    ctx.lineWidth = 4.0;
+    if(hovered_node) {
+	plot_line(graph_history[hovered_node], max_power, padding,
+		  name_to_color(hovered_node));
     }
 }
 
@@ -308,6 +334,9 @@ function create_node(data, buttons) {
 
     let li = document.createElement('li');
     let label_span = document.createElement('span');
+    label_span.setAttribute('onmouseover', 'set_hovered(\'' +
+			    name + '\')');
+    label_span.setAttribute('onmouseleave', 'clear_hovered()');
     label_span.style.color = name_to_color(name);
     label_span.textContent = name + ": " + usage_string;
     label_span.setAttribute('class', 'label ' + status);
