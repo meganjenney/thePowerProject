@@ -83,6 +83,13 @@ loop(CurrentState) ->
             io:format("Breaker ~p ignoring creation of ~p~n", [Name, ChildName]),
             loop(CurrentState);
         % trying to remove appliance
+        {removeNode, Name} ->
+            io:format("Remove breaker: ~p~n", [Name]),
+            exit_children(Children),
+            case Status of
+                on -> ParentPid ! {powerUpdate, off, {Name, CurrentUsage}};
+                _Other -> none
+            end;
         {removeNode, NodeName} ->
             io:format("Breaker ~p forwarding remove node: ~p~n", [Name, NodeName]),
             forward_message({removeNode, NodeName}, Children),
