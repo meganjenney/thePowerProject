@@ -77,7 +77,6 @@ loop(CurrentState) ->
             loop(CurrentState);
         % add breaker
         {createBreaker, Name, MaxBreakerPower} ->
-            % TODO: Add ability to create appliances at breaker
             Pid = breaker:start(Name, MaxBreakerPower),
             io:format("Created Breaker: ~s (~p)~n", [Name, Pid]),
             loop({MaxPower, CurrentUsage, [Pid | Children]});
