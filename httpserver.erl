@@ -32,9 +32,12 @@ loop(Sock, State) ->
 	_ -> ok
     after 0 -> ok
     end,
-    {ok, Conn} = gen_tcp:accept(Sock),
-    Handler = spawn(fun () -> handle(Conn, State) end),
-    gen_tcp:controlling_process(Conn, Handler),
+	{Atom, ConnReason} = gen_tcp:accept(Sock, 1000),
+	case Atom of
+		ok -> Handler = spawn(fun () -> handle(ConnReason, State) end),
+			gen_tcp:controlling_process(ConnReason, Handler);
+		error -> ok
+	end,
     loop(Sock, State).
 
 parse_query_string("") -> [];
