@@ -244,7 +244,7 @@ function draw_history() {
     for(const node in graph_history) {
 	if(hovered_node == node) {
 	    // we will render the hovered node's line after all the others
-	    break;
+	    continue;
 	}
 	let history = graph_history[node];
 	plot_line(history, max_power, padding, name_to_color(node));
