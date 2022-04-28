@@ -22,6 +22,7 @@ start_appliance(Name, Power, Clock) ->
     PowerPid ! {ListenerPid},
     {ListenerPid, Ref}.
 
+% Independent process to consume power
 power_loop(Power, Clock, ListenerPid) ->
     receive 
         {exit} -> ok;
