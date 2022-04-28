@@ -27,7 +27,7 @@ power_loop(Power, Clock, ListenerPid) ->
     receive 
         {exit} -> ok;
         {Pid} when is_pid(Pid) -> power_loop(Power, Clock, Pid)
-    after round(Clock * 10000) -> 
+    after round(Clock * 1000 * rand:uniform(10)) ->
         NewPower = rand:normal(Power, Power / 5),
         case NewPower =< 0 of
             true -> ListenerPid ! {power, self(), 0};
