@@ -29,6 +29,10 @@ start(MaxPower, Port) ->
 
 % Stops house and associated server
 stop() ->
-    house ! {exit},
-    houseserver ! {exit},
+    HousePid = whereis(house),
+    ServerPid = whereis(houseserver),
+    unregister(house),
+    unregister(houseserver),
+    HousePid ! {exit},
+    ServerPid ! {exit},
     true.
