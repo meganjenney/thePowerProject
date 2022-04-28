@@ -105,7 +105,7 @@ loop(CurrentState) ->
         {exit} ->
             io:format("Ending house and killing all children~n", []),
             exit_children(Children);
-        {'DOWN', _Ref, process, Pid, {normal, _Power}} ->
+        {'DOWN', _Ref, process, Pid, normal} ->
             io:format("Process ~p died~n", [Pid]),
             loop({MaxPower, CurrentUsage, proplists:delete(Pid, Children)});            
         Other ->
