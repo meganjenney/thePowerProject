@@ -63,11 +63,11 @@ loop(CurrentState) ->
         
         %% power status
         {power, PowerPid, NewPower} -> 
-            io:format("Changing power from ~p to ~p~n", [Power, NewPower]),
+            io:format("Changing power of ~p from ~p to ~p~n", [Name, Power, NewPower]),
             case Status of
             % Trying difference
                 on -> 
-                    ParentPID ! {powerUpdate, on, {Name, NewPower}},
+                    ParentPID ! {powerUpdate, on, {Name, NewPower - Power}},
                     loop({Name, ParentPID, NewPower, Status, PowerPid}); 
                 off -> loop({Name, ParentPID, Power, Status, PowerPid})
             end;
