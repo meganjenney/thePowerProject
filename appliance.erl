@@ -26,7 +26,7 @@ power_loop(Power, Clock, ListenerPid) ->
     receive 
         {exit} -> ok;
         {Pid} when is_pid(Pid) -> power_loop(Power, Clock, Pid)
-    after Clock * 1000 -> 
+    after round(Clock * 10000) -> 
         NewPower = rand:normal(Power, Power / 5),
         case NewPower =< 0 of
             true -> ListenerPid ! {power, self(), 0};
@@ -64,7 +64,13 @@ loop(CurrentState) ->
         %% power status
         {power, PowerPid, NewPower} -> 
             io:format("Changing power from ~p to ~p~n", [Power, NewPower]),
-            loop({Name, ParentPID, NewPower, on, PowerPid});
+            case Status of
+            % Trying difference
+                on -> 
+                    ParentPID ! {powerUpdate, on, {Name, NewPower}},
+                    loop({Name, ParentPID, NewPower, Status, PowerPid}); 
+                off -> loop({Name, ParentPID, Power, Status, PowerPid})
+            end;
         % turn on
         % breaker trip
         {turnOff, all} ->

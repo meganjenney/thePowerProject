@@ -236,7 +236,7 @@ function handle_click(node_name, button_name) {
 	    return;
 	}
 
-	let clock = "1";
+	let clock = "1.0";
 	request_action(`/new_appliance?parent=${parent}&name=${name}&power=${power}&clock=${clock}`);
     } else if(button_name == "new breaker") {
 	let name = prompt("breaker name");
