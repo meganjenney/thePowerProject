@@ -4,7 +4,7 @@
 %%% S. Bentley, S. Cohen, M. Jenney
 %%% 
 %%% This module is the basis for Appliance processes, which consume
-%%%     power at a specified rate and receivee external requests to
+%%%     power at a specified rate and receive external requests to
 %%%     turn power consumption on and off.
 %%% Processes of this module can be created by House and Breaker
 %%%     processes.

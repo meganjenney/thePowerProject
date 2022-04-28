@@ -26,3 +26,21 @@ To shutdown the web server, type:
 true
 >
 ```
+
+## File Contents
+All files are under the main directory `thePowerProject.`
+
+- [admin.erl](admin.erl): Erlang module providing administrative tools,
+    including compiling all project files and starting and stopping the server.
+- [appliance.erl](appliance.erl): Erlang module for appliance processes, which
+    consume power and receive external requests to switch on and off.
+- [breaker.erl](breaker.erl): Erlang module for breaker processes, which head 
+    subtrees of the house, supervising child nodes and managing power 
+    consumption.
+- [house.erl](house.erl): Erlang module for house process managing entire 
+    simulation, acting as head of supervisor tree to create and switch on/off
+    appliances as requested by user or dictated by power consumption.
+- [httpserver.erl](httpserver.erl): Erlang module defining interface between 
+    house process and server. 
+- [index.html](index.html): HTML file to structure user interface style and 
+    contents for house simulation.
