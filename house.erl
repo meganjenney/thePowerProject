@@ -91,7 +91,7 @@ check_capacity({MaxPower, CurrentUsage, Status, Children, TripApp},
                 {AppName, AppPower}) ->
     case MaxPower >= (CurrentUsage + AppPower) of
         true ->
-            NewPower = CurrentUsage + AppPower
+            NewPower = CurrentUsage + AppPower,
             loop({MaxPower, NewPower, Status, Children, TripApp});
         false -> forward_message({turnOff, all}, Children),
                 loop({MaxPower, 0, tripped, Children, AppName})
