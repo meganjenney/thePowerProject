@@ -1,120 +1,120 @@
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=PT+Sans&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=PT+Sans&display=swap');
 
-  html {
-      font-family: 'PT Sans', sans-serif;
-  }
+    html {
+        font-family: 'PT Sans', sans-serif;
+    }
 
-  .buttons {
-      cursor: pointer;
-      opacity: 0;
-      transition-property: opacity;
-      font-size: 10pt;
-  }
+    .buttons {
+        cursor: pointer;
+        opacity: 0;
+        transition-property: opacity;
+        font-size: 10pt;
+    }
 
-  .label {
-      cursor: pointer;
-  }
+    .label {
+        cursor: pointer;
+    }
 
-  .label:hover + .buttons, .buttons:hover {
-      opacity: 1;
-  }
+    .label:hover + .buttons, .buttons:hover {
+        opacity: 1;
+    }
 
-  .buttons a {
-      margin: 0.1em;
-      padding: 0.1em;
-      opacity: 0.5;
-      transition-property: opacity;
-      background-color: #dddddd;
-      border: solid;
-      border-width: 1px;
-      border-color: #aaaaaa;
-  }
+    .buttons a {
+        margin: 0.1em;
+        padding: 0.1em;
+        opacity: 0.5;
+        transition-property: opacity;
+        background-color: #dddddd;
+        border: solid;
+        border-width: 1px;
+        border-color: #aaaaaa;
+    }
 
-  .buttons a:hover {
-      opacity: 1;
-  }
+    .buttons a:hover {
+        opacity: 1;
+    }
 
-  /* draw tree structure */
-  /* https://gist.github.com/dylancwood/7368914 */
-  ul#tree_root, ul#tree_root ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-  }
-  ul#tree_root ul {
-      margin-left: 10px;
-  }
-  ul#tree_root li {
-      margin: 0;
-      padding: 0 7px;
-      line-height: 20px;
-      border-left:2px solid rgb(100,100,100);
+    /* draw tree structure */
+    /* https://gist.github.com/dylancwood/7368914 */
+    ul#tree_root, ul#tree_root ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    ul#tree_root ul {
+        margin-left: 10px;
+    }
+    ul#tree_root li {
+        margin: 0;
+        padding: 0 7px;
+        line-height: 20px;
+        border-left:2px solid rgb(100,100,100);
 
-  }
-  ul#tree_root li:last-child {
-      border-left:none;
-  }
-  ul#tree_root li:before {
-      position:relative;
-      top:-0.3em;
-      height:1em;
-      width:12px;
-      color:white;
-      border-bottom:2px solid rgb(100,100,100);
-      content:"";
-      display:inline-block;
-      left:-7px;
-  }
-  ul#tree_root li:last-child:before {
-      border-left:2px solid rgb(100,100,100);
-  }
+    }
+    ul#tree_root li:last-child {
+        border-left:none;
+    }
+    ul#tree_root li:before {
+        position:relative;
+        top:-0.3em;
+        height:1em;
+        width:12px;
+        color:white;
+        border-bottom:2px solid rgb(100,100,100);
+        content:"";
+        display:inline-block;
+        left:-7px;
+    }
+    ul#tree_root li:last-child:before {
+        border-left:2px solid rgb(100,100,100);
+    }
 
-  .tripped::before {
-      content: "tripped";
-      background-color: red;
-  }
+    .tripped::before {
+        content: "tripped";
+        background-color: red;
+    }
 
-  .off::before {
-      content: "off";
-      background-color: gray;
-  }
+    .off::before {
+        content: "off";
+        background-color: gray;
+    }
 
-  .on::before {
-      content: "on";
-      background-color: green;
-  }
+    .on::before {
+        content: "on";
+        background-color: green;
+    }
 
-  .off::before,
-  .on::before,
-  .tripped::before {
-      color: white;
-      font-size: 10pt;
-      margin-right: 10px;
-      padding-left: 2px;
-      padding-right: 2px;
-      border-radius: 2px;
-  }
+    .off::before,
+    .on::before,
+    .tripped::before {
+        color: white;
+        font-size: 10pt;
+        margin-right: 10px;
+        padding-left: 2px;
+        padding-right: 2px;
+        border-radius: 2px;
+    }
 
-  canvas {
-      top: 10px;
-      right: 10px;
-      position: absolute;
-      width: 250px;
-      height: 250px;
-      background-color: white;
-      margin: 10px;
-      box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
-  }
-</style>
-<h2>ThePowerProject</h2>
-<h3>Power Analyzer</h3>
-<ul id="tree_root">
-</ul>
-<canvas id="canvas" width=300 height=300>
-</canvas>
+    canvas {
+        top: 10px;
+        right: 10px;
+        position: absolute;
+        width: 250px;
+        height: 250px;
+        background-color: white;
+        margin: 10px;
+        box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+    }
+    </style>
+    <h2>ThePowerProject</h2>
+    <h3>Power Analyzer</h3>
+    <ul id="tree_root">
+    </ul>
+    <canvas id="canvas" width=300 height=300>
+    </canvas>
 
-<script>
+    <script>
 
 const approved_colors = [
     "#C62828",
@@ -171,7 +171,7 @@ setInterval(function() {
 function hash(string) {
     n = 0;
     for(let i = 0; i < string.length; ++i) {
-	n += string.charCodeAt(i);
+	    n += string.charCodeAt(i);
     }
     return n;
 }
@@ -184,10 +184,10 @@ function name_to_color(name) {
 function max_power_in_history() {
     let max = 0;
     for(const node in graph_history) {
-	let history = graph_history[node];
-	for(const history_elem of history) {
-	    if(history_elem[1] > max) max = history_elem[1];
-	}
+        let history = graph_history[node];
+        for(const history_elem of history) {
+            if(history_elem[1] > max) max = history_elem[1];
+        }
     }
 
     return max;
@@ -197,30 +197,30 @@ function max(a, b) {
     return a > b ? a : b;
 }
 
-  function plot_line(history, max_power, padding, color) {
-      const v_scale = (c.height - padding * 2) / max(Math.ceil(max_power), 1);
-      const h_scale = (c.width  - padding * 2) / history_length;
+function plot_line(history, max_power, padding, color) {
+    const v_scale = (c.height - padding * 2) / max(Math.ceil(max_power), 1);
+    const h_scale = (c.width  - padding * 2) / history_length;
 
-      ctx.beginPath();
+    ctx.beginPath();
 
-      ctx.strokeStyle = color;
-      ctx.moveTo(0, 0);
+    ctx.strokeStyle = color;
+    ctx.moveTo(0, 0);
 
-      for(let i = 0; i < history.length; ++i) {
-	  let offset = t - history[i][0];
-	  let power = history[i][1];
+    for(let i = 0; i < history.length; ++i) {
+        let offset = t - history[i][0];
+        let power = history[i][1];
 
-	  const x = c.width - (offset * h_scale + padding);
-	  const y = c.height - (power * v_scale + padding);
-	  if(i == 0) {
-	      ctx.moveTo(x, y);
-	  } else {
-	      ctx.lineTo(x, y);
-	  }
-      }
+        const x = c.width - (offset * h_scale + padding);
+        const y = c.height - (power * v_scale + padding);
+        if(i == 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
 
-      ctx.stroke();
-  }
+    ctx.stroke();
+}
 
 function draw_history() {
     const padding = 20;
@@ -268,21 +268,21 @@ function update_graph_history(data, t) {
     let status = data.status ? data.status : "";
 
     if(graph_history[name]) {
-	// push the new datapoint to this node's history
-	graph_history[name].push([t, status == "off" ? 0 : power]);
-	if(graph_history[name].length > history_length) {
-	    graph_history[name].shift();
-	}
+        // push the new datapoint to this node's history
+        graph_history[name].push([t, status == "off" ? 0 : power]);
+        if(graph_history[name].length > history_length) {
+            graph_history[name].shift();
+        }
     } else {
-	// node is new
-	graph_history[name] = [];
+        // node is new
+        graph_history[name] = [];
     }
 
     if(!data.children) return;
 
     // recurse on the node's children
     for(const child of data.children) {
-	update_graph_history(child, t);
+	    update_graph_history(child, t);
     }
 }
 
