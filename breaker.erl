@@ -77,20 +77,20 @@ rpc(Pid, Request) ->
 %% Inputs: CurrentState (tuple) - Current state variables of breaker
 %%         {AppName, AppPower} - New power consumption from child
 %%--------------------------------------------------------------------
-check_capacity({Name, ParentPid, MaxPower, CurrentUsage, Status, Children}, 
+check_capacity({Name, ParentPid, MaxPower, CurrentUsage, Status, Children},
                {AppName, AppPower}) ->
     case Status == on of
         true ->
             case MaxPower >= (CurrentUsage+AppPower) of
                 true  -> ParentPid ! {powerUpdate, on, {AppName, AppPower}},
-                        loop({Name, ParentPid, MaxPower, CurrentUsage+AppPower, 
+                        loop({Name, ParentPid, MaxPower, CurrentUsage+AppPower,
                               Status, Children});
                 false -> forward_message({turnOff, all}, Children),
                         ParentPid ! {trip, Name, CurrentUsage, AppName},
                         loop({Name, ParentPid, MaxPower, 0, tripped, Children})
             end;
         false ->
-            io:format("Tried to turn on appliance ~s on tripped breaker ~s~n", 
+            io:format("Tried to turn on appliance ~s on tripped breaker ~s~n",
                       [AppName, Name]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, Status, Children})
     end.
@@ -132,7 +132,7 @@ loop(CurrentState) ->
                     loop({Name, ParentPid, MaxPower, CurrentUsage, Status, 
                          [Pid | Children]});
                 _Other ->
-                    io:format("Cannot add appliance ~p on tripped breaker ~p~n",
+                    io:format("Can't add appliance ~p on tripped breaker ~p~n",
                               [ChildName, Name]),
                     loop(CurrentState)
 
@@ -164,7 +164,7 @@ loop(CurrentState) ->
                 on ->
                     forward_message({turnOn, AppName}, Children);
                 _Other ->
-                    io:format("Can't turn on appliance on tripped breaker ~p~n",
+                    io:format("Can't turn on appliance with breaker ~p trip~n",
                               [Name])
             end,
             loop(CurrentState);
@@ -188,7 +188,8 @@ loop(CurrentState) ->
                                   {AppName, AppPower}},
                     loop({Name, ParentPid, MaxPower, CurrentUsage-AppPower, 
                           Status, proplists:delete(AppPid, Children)});
-                _Other -> loop({Name, ParentPid, MaxPower, CurrentUsage, Status, 
+                _Other ->
+                    loop({Name, ParentPid, MaxPower, CurrentUsage, Status,
                                 proplists:delete(AppPid, Children)})
             end;
         % Respond to child removal power update when child off

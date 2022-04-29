@@ -60,18 +60,17 @@ handle(Conn, State) ->
 	    gen_tcp:send(Conn, html_response(IndexBinary));
 	{"GET", "/info"} ->
      		InfoText = info_to_json(house:get_info(HousePid)),
-			% io:format("json response: ~p~n", [json_response(list_to_binary(InfoText))]),
      	    gen_tcp:send(Conn, json_response(list_to_binary(InfoText)));
 	{"POST", "/new_appliance"} ->
 	    Parent = proplists:get_value("parent", KeyValuePairs),
 	    Name = proplists:get_value("name", KeyValuePairs),
-	    {Power, []} = string:to_float(proplists:get_value("power", KeyValuePairs)),
-	    {Clock, []} = string:to_float(proplists:get_value("clock", KeyValuePairs)),
+	    {Power,[]}=string:to_float(proplists:get_value("power",KeyValuePairs)),
+	    {Clock,[]}=string:to_float(proplists:get_value("clock",KeyValuePairs)),
 	    HousePid ! {createApp, Parent, Name, Power, Clock},
 	    gen_tcp:send(Conn, "HTTP/1.0 200 OK");
 	{"POST", "/new_breaker"} ->
 	    Name = proplists:get_value("name", KeyValuePairs),
-	    {Power, []} = string:to_float(proplists:get_value("power", KeyValuePairs)),
+	    {Power,[]}=string:to_float(proplists:get_value("power",KeyValuePairs)),
 	    HousePid ! {createBreaker, Name, Power};
 	{"POST", "/delete"} ->
 	    Name = proplists:get_value("name", KeyValuePairs),
@@ -88,7 +87,8 @@ handle(Conn, State) ->
 		io:format("KVP: ~p~n", [KeyValuePairs]),
 		HousePid ! {tripResolve, Decision, RemoveApp};
 	_ ->
-	    io:format("unknown endpoint: Method ->~s<- Ept->~s<-~n", [Method, Endpoint]),
+	    io:format("unknown endpoint: Method ->~s<- Ept->~s<-~n",
+			[Method,Endpoint]),
 	    lists:foreach(fun (Elem) ->
 				  {Key, Value} = Elem,
 				  io:format("query parameter: ~s <- ~s~n", [Key, Value])
@@ -100,7 +100,7 @@ handle(Conn, State) ->
 json_response(B) ->
     iolist_to_binary(
       io_lib:fwrite(
-	"HTTP/1.0 200 Ok\nContent-Type: application/json\nContent-Length: ~p\n\n~s",
+	"HTTP/1.0 200 Ok\nContent-Type:application/json\nContent-Length: ~p\n\n~s",
 	[size(B), B])).
 
 html_response(B) ->
@@ -116,13 +116,13 @@ concat_with_delim([A | B], D) -> A ++ D ++ concat_with_delim(B, D).
 
 info_to_json({house, MaxPower, CurrentUsage, Status, ChildInfo, TripApp}) ->
     OwnInfo = io_lib:format("{ \"type\": \"house\", "
-			    ++ "\"max_power\": ~f, "
-			    ++ "\"current_usage\": ~f, "
-				++ "\"status\": \"~s\", "
-				++ "\"trip_app\": \"~s\", "
-			    ++ "\"children\": [", 
-			    [float(MaxPower), float(CurrentUsage), atom_to_list(Status), TripApp]),
-    ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end, ChildInfo),
+		++ "\"max_power\": ~f, "
+		++ "\"current_usage\": ~f, "
+		++ "\"status\": \"~s\", "
+		++ "\"trip_app\": \"~s\", "
+		++ "\"children\": [", 
+		[float(MaxPower), float(CurrentUsage), atom_to_list(Status), TripApp]),
+    ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end,ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
 info_to_json({breaker, Name, MaxPower, CurrentUsage, Status, ChildInfo}) ->
     OwnInfo = io_lib:format("{ \"type\": \"breaker\", "
@@ -133,7 +133,7 @@ info_to_json({breaker, Name, MaxPower, CurrentUsage, Status, ChildInfo}) ->
 			    ++ "\"children\": [",
 			    [Name, float(MaxPower), float(CurrentUsage), 
 			     atom_to_list(Status)]),
-    ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end, ChildInfo),
+    ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end,ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
 info_to_json({appliance, Name, Power, Status}) ->
     io_lib:format("{ \"type\": \"appliance\", "

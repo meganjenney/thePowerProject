@@ -45,7 +45,7 @@ start_appliance(Name, Power, Clock) ->
 %% Description: Determines power consumption centered on given mean power
 %% Inputs: Power (float) - Mean appliance power consumption in Amps
 %%         Clock (float) - Maximum power consumption interval in decaseconds
-%%         ListenerPid (pid) - Process identifier for appliance to send power 
+%%         ListenerPid (pid) - Process identifier for appliance to send power
 %%                             consumption to
 %%--------------------------------------------------------------------
 power_loop(Power, Clock, ListenerPid) ->
@@ -109,11 +109,13 @@ loop(CurrentState) ->
             end;
         % Turn off appliance due to breaker trip
         {turnOff, all} ->
-            io:format("A parent breaker of appliance ~p has tripped~n", [Name]),
+            io:format("A parent breaker of appliance ~p has tripped~n",
+                [Name]),
             loop({Name, ParentPid, Power, off, PowerPid});
         % Turn on appliance 
         {turnOn, Name} ->
-            io:format("Turning appliance ~p with PID ~p ON~n", [Name, self()]),
+            io:format("Turning appliance ~p with PID ~p ON~n",
+                [Name, self()]),
             case Status of
                 on -> io:format("Appliance ~p already ON~n", [Name]);
                 off -> ParentPid ! {powerUpdate, on, {Name, Power}}
@@ -121,7 +123,8 @@ loop(CurrentState) ->
             loop({Name, ParentPid, Power, on, PowerPid});
         % Turn off appliance
         {turnOff, Name} ->
-            io:format("Turning appliance ~p with PID ~p OFF~n", [Name, self()]),
+            io:format("Turning appliance ~p with PID ~p OFF~n",
+                [Name, self()]),
             case Status of
                 off -> io:format("Appliance ~p already OFF~n", [Name]);
                 on -> ParentPid ! {powerUpdate, off, {Name, Power}}
@@ -129,7 +132,8 @@ loop(CurrentState) ->
             loop({Name, ParentPid, Power, off, PowerPid});
         % Remove appliance as a result of parent trip
         {tripResolve, removeNode, Name} ->
-            io:format("Removing appliance as resolution to trip: ~p~n", [Name]),
+            io:format("Removing appliance as resolution to trip: ~p~n",
+                [Name]),
             ParentPid ! {powerUpdate, removal, Status, {Name, Power, self()}};
         
         % Update parent and exit appliance and power consumer

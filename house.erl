@@ -42,10 +42,11 @@ rpc(Pid, Request) ->
 
 get_info(Pid) -> rpc(Pid, info).
 
-check_capacity({MaxPower, CurrentUsage, Status, Children, TripApp}, {AppName, AppPower}) ->
-    io:format("Name of appliance now on is ~p~n", [AppName]),
+check_capacity({MaxPower, CurrentUsage, Status, Children, TripApp},
+                {AppName, AppPower}) ->
     case MaxPower >= (CurrentUsage+AppPower) of
-        true -> loop({MaxPower, CurrentUsage+AppPower, Status, Children, TripApp});
+        true ->
+            loop({MaxPower, CurrentUsage+AppPower, Status, Children, TripApp});
         false -> forward_message({turnOff, all}, Children),
                 loop({MaxPower, 0, tripped, Children, AppName})
     end.
@@ -60,7 +61,8 @@ loop(CurrentState) ->
                     rpc(ChildPid, info)
                 end,
             ChildInfo = lists:map(RequestInfo, Children),
-            From ! {self(), {house, MaxPower, CurrentUsage, Status, ChildInfo, TripApp}},
+            NewS = {house, MaxPower, CurrentUsage, Status, ChildInfo, TripApp},
+            From ! {self(), NewS},
             loop(CurrentState);
         {createApp, "house", Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, Power, Clock),
@@ -69,7 +71,7 @@ loop(CurrentState) ->
         % add appliance on breaker
         {createApp, BreakerName, Name, Power, Clock} ->
             io:format("Forwarding appliance creation: ~p~n", [Name]),
-            forward_message({createApp, BreakerName, Name, Power, Clock}, Children),
+            forward_message({createApp,BreakerName,Name,Power,Clock},Children),
             loop(CurrentState);
         % remove appliance
         {removeNode, NodeName} ->
@@ -99,22 +101,27 @@ loop(CurrentState) ->
         {powerUpdate, removal, on, {AppName, AppPower, AppPid}} ->
             io:format("house registers removal of appliance ~p~n", [AppName]),
             case Status == on of
-                true -> loop({MaxPower, CurrentUsage-AppPower, Status, proplists:delete(AppPid, Children), TripApp});
-                false -> loop({MaxPower, CurrentUsage, Status, proplists:delete(AppPid, Children), TripApp})
+                true -> NewUsage = CurrentUsage - AppPower,
+                    loop({MaxPower, NewUsage, Status,
+                        proplists:delete(AppPid, Children), TripApp});
+                false -> 
+                    loop({MaxPower, CurrentUsage, Status,
+                        proplists:delete(AppPid, Children),TripApp})
             end;
         {powerUpdate, removal, off, {AppName, _AppPower, AppPid}} ->
             io:format("house registers removal of appliance ~p~n", [AppName]),
-            loop({MaxPower, CurrentUsage, Status, proplists:delete(AppPid, Children), TripApp});
+            loop({MaxPower, CurrentUsage, Status,
+                proplists:delete(AppPid, Children), TripApp});
         % breaker trip
         {trip, BreakerName, BreakerUsage, AppName} ->
-            io:format("~p on breaker ~p has caused a trip~n", [AppName, BreakerName]),
-            loop({MaxPower, CurrentUsage-BreakerUsage, Status, Children, TripApp});
+            io:format("~p on breaker ~p has caused a trip~n",
+                [AppName, BreakerName]),
+            loop({MaxPower,CurrentUsage-BreakerUsage,Status,Children,TripApp});
         % trip resolution
-        {tripResolve, Decision, RemoveApp} ->
-            io:format("TRIP DECISION IS ~p~n", [Decision]),
-            io:format("REMOVING ~p~n", [RemoveApp]),
+        {tripResolve, Decision, TripApp} ->
             case Decision == "yes" of
-                true -> forward_message({tripResolve, removeNode, RemoveApp}, Children);
+                true ->
+                    forward_message({tripResolve,removeNode,TripApp},Children);
                 false -> ok
             end,
             io:format("after decision check"),
@@ -126,7 +133,8 @@ loop(CurrentState) ->
             exit(self(), normal);
         {'DOWN', _Ref, process, Pid, normal} ->
             io:format("Process ~p died~n", [Pid]),
-            loop({MaxPower, CurrentUsage, Status, proplists:delete(Pid, Children), TripApp});
+            loop({MaxPower, CurrentUsage, Status,
+                proplists:delete(Pid, Children), TripApp});
         Other ->
             io:format("Received: ~w~n", [Other]),
             loop(CurrentState)

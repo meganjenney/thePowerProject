@@ -1,5 +1,5 @@
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=PT+Sans&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=PT+Sans&display=swap');
 
     html {
         font-family: 'PT Sans', sans-serif;
@@ -237,9 +237,11 @@ function draw_history() {
 
     ctx.textBaseline = "hanging";
     ctx.textAlign = "end";
-    ctx.fillText(max_power.toString() + " A", padding - text_offset, padding + text_offset);
-    ctx.fillText("0 A", padding - text_offset, c.height - padding - text_offset);
-    ctx.fillText(t + " s", c.width - padding + text_offset, c.height - padding + text_offset);
+    ctx.fillText(max_power.toString()+" A", padding-text_offset, padding +
+                    text_offset);
+    ctx.fillText("0 A", padding-text_offset, c.height-padding-text_offset);
+    ctx.fillText(t + " s", c.width-padding+text_offset, c.height-padding+
+                    text_offset);
     ctx.lineWidth = 2.0;
     for(const node in graph_history) {
 	if(hovered_node == node) {
@@ -302,7 +304,9 @@ function handle_click(node_name, button_name, trip_app) {
             return;
         }
         let clock = "1.0";
-        request_action(`/new_appliance?parent=${parent}&name=${name}&power=${power}&clock=${clock}`);
+        let rq = `/new_appliance?parent=${parent}&name=${name}` +
+                    `&power=${power}&clock=${clock}`;
+        request_action(rq);
 
     } else if(button_name == "new breaker") {
         let name = prompt("breaker name");
@@ -327,7 +331,8 @@ function handle_click(node_name, button_name, trip_app) {
         request_action(`/turn_off?name=${name}`);
 
     } else if(button_name == "resolve trip") {
-        let handle = prompt("Would you like to remove the appliance which caused the trip?");
+        let handle = prompt("Would you like to remove the appliance " +
+                            "which caused the trip?", "yes");
         request_action(`/resolve?app=${trip_app}&handle=${handle}`);
     }
 }
@@ -366,7 +371,8 @@ function populate_tree(root, data) {
 
     if(data.type == "house") {
         if(data.status == "tripped") {
-            let child = create_node(data, ["resolve trip", "new appliance", "new breaker", "delete"]);
+            let child = create_node(data, ["resolve trip", "new appliance",
+                                            "new breaker", "delete"]);
             let ul = document.createElement('ul');
             child.appendChild(ul);
 
@@ -376,7 +382,8 @@ function populate_tree(root, data) {
                 populate_tree(ul, child);
             }
         } else {
-            let child = create_node(data, ["new appliance", "new breaker", "delete"]);
+            let child = create_node(data, ["new appliance", "new breaker",
+                                            "delete"]);
             let ul = document.createElement('ul');
             child.appendChild(ul);
 
