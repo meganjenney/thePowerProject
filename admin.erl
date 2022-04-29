@@ -3,8 +3,8 @@
 %%% Tufts University Spring 2022
 %%% S. Bentley, S. Cohen, M. Jenney
 %%% 
-%%% This module serves as a tool to streamline the startup and
-%%%     shutdown of server processes.
+%%% This module provides administrative tools, including compiling
+%%%     all project files and starting and stopping the server.
 %%% Calls functions in the House and HTTPServer modules which spawn
 %%%     their respective processes.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

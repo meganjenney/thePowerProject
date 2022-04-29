@@ -4,9 +4,9 @@
 %%% S. Bentley, S. Cohen, M. Jenney
 %%% 
 %%% This module serves as the framework for Breaker processes which
-%%%     supervise child nodes, manage power so its collection of
-%%%     appliances doesn't exceed a breaker's limit, and handle
-%%%     requests to create, turn on, and turn off individual appliances.
+%%%     supervise child nodes, handles requests to create, turn on,
+%%%     and turn off individual appliances, as well as requests
+%%%     to remove appliances in event of a trip.
 %%% Processes of this module can only be created by House processes.
 %%% Able to create processes of Appliance modules.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

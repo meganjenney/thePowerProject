@@ -8,7 +8,8 @@
 %%% This module is the basis for a house process which manages the
 %%%     entire simulation, acting as head of a supervisor tree in the
 %%%     creation, turning on, and turning off of appliances either as
-%%%     requested by a user or as needed according to power consumption.
+%%%     requested by a user or as needed according to power
+%%%     consumption.
 %%% Integrates with user interface module to provide user visibility
 %%%     and control.
 %%% Able to create processes of Breaker and Appliance modules.

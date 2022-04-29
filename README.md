@@ -1,17 +1,16 @@
 # thePowerProject
 
 ## Running the Simulator
+Start a session of the Erlang shell.
 ```erlang
 > c(admin).                   % compile the admin module once per shell
 {ok, admin}
 > admin:compile()             % compile all project modules
 complete
 
-> admin:start(10.0, 8080).    % create a new house with 10.0 amps of available current
-                              % and start the server running on port 8080
-Starting on port 8080
-true
-...
+> admin:start(10.0, 8080).    % create a new house with 10.0 amps of available
+                              % current and start the server running on port
+                              % 8080
 
 ```
 Now, modifications to the `house`, will be reflected on
