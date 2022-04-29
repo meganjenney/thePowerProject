@@ -37,14 +37,14 @@ rpc(Pid, Request) ->
 	{Pid, Response} -> Response
     end.
 
-checkCapacity({Name, ParentPid, MaxPower, CurrentUsage, Status, Children}, {AppName, AppPower}) ->
+check_capacity({Name, ParentPid, MaxPower, CurrentUsage, Status, Children}, {AppName, AppPower}) ->
     case Status == on of
         true ->
             case MaxPower >= (CurrentUsage+AppPower) of
                 true  -> ParentPid ! {powerUpdate, on, {AppName, AppPower}},
                         loop({Name, ParentPid, MaxPower, CurrentUsage+AppPower, Status, Children});
                 false -> forward_message({turnOff, all}, Children),
-                        ParentPid ! {trip, Name, CurrentUsage},
+                        ParentPid ! {trip, Name, CurrentUsage, AppName},
                         loop({Name, ParentPid, MaxPower, 0, tripped, Children})
             end;
         false ->
@@ -77,11 +77,6 @@ loop(CurrentState) ->
                     io:format("Created Pid: ~p~n", [Pid]),
                     loop({Name, ParentPid, MaxPower, CurrentUsage, Status, [Pid | Children]})
             end;
-        % trying to create appliance on another breaker
-        {createApp, _OtherBreaker, ChildName, _Power, _Clock} ->
-            % TODO: If multiple levels of breakers, add ability to forward
-            io:format("Breaker ~p ignoring creation of ~p~n", [Name, ChildName]),
-            loop(CurrentState);
         % trying to remove appliance
         {removeNode, Name} ->
             io:format("Remove breaker: ~p~n", [Name]),
@@ -116,15 +111,25 @@ loop(CurrentState) ->
         % appliance power usage updates
         {powerUpdate, on, AppInfo} ->
             % check status of breaker capacity
-            checkCapacity(CurrentState, AppInfo);
+            check_capacity(CurrentState, AppInfo);
         {powerUpdate, off, {AppName, AppPower}} ->
             ParentPid ! {powerUpdate, off, {AppName, AppPower}},
             loop({Name, ParentPid, MaxPower, CurrentUsage-AppPower, Status, Children});
-        % trip from child breaker
-        {breakerTrip, _OtherBreaker} ->
-            % TODO: If multiple levels of breakers, add ability to see child trip
-            loop(CurrentState);
-
+        % appliance being removed
+        {powerUpdate, removal, on, {AppName, AppPower, AppPid}} ->
+            case Status == on of
+                true -> ParentPid ! {powerUpdate, removal, on, {AppName, AppPower}},
+                        loop({Name, ParentPid, MaxPower, CurrentUsage-AppPower, Status, proplists:delete(AppPid, Children)});
+                false -> loop({Name, ParentPid, MaxPower, CurrentUsage, Status, proplists:delete(AppPid, Children)})
+            end;
+        {powerUpdate, removal, off, {AppName, _AppPower, AppPid}} ->
+            io:format("house registers removal of ~p~n", [AppName]),
+            loop({Name, ParentPid, MaxPower, CurrentUsage, Status, proplists:delete(AppPid, Children)});
+        {tripResolve, removeNode, NodeName} ->
+            io:format("Breaker ~p forwarding remove node: ~p~n", [Name, NodeName]),
+            forward_message({removeNode, NodeName}, Children),
+            loop({Name, ParentPid, MaxPower, CurrentUsage, on, Children});
+        
         {exit} ->
             io:format("Ending breaker ~p and killing all children~n", [Name]),
             exit_children(Children);

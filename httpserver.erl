@@ -59,8 +59,9 @@ handle(Conn, State) ->
 	    {ok, IndexBinary} = file:read_file("./index.html"),
 	    gen_tcp:send(Conn, html_response(IndexBinary));
 	{"GET", "/info"} ->
-     	    JsonText = info_to_json(house:get_info(HousePid)),
-     	    gen_tcp:send(Conn, json_response(list_to_binary(JsonText)));
+     		InfoText = info_to_json(house:get_info(HousePid)),
+			io:format("json response: ~p~n", [json_response(list_to_binary(InfoText))]),
+     	    gen_tcp:send(Conn, json_response(list_to_binary(InfoText)));
 	{"POST", "/new_appliance"} ->
 	    Parent = proplists:get_value("parent", KeyValuePairs),
 	    Name = proplists:get_value("name", KeyValuePairs),
@@ -81,6 +82,11 @@ handle(Conn, State) ->
 	{"POST", "/turn_off"} ->
 		Name = proplists:get_value("name", KeyValuePairs),
 		HousePid ! {turnOff, Name};
+	{"POST", "/resolve"} ->
+		Decision = proplists:get_value("handle", KeyValuePairs),
+		RemoveApp = proplists:get_value("app", KeyValuePairs),
+		io:format("KVP: ~p~n", [KeyValuePairs]),
+		HousePid ! {tripResolve, Decision, RemoveApp};
 	_ ->
 	    io:format("unknown endpoint: Method ->~s<- Ept->~s<-~n", [Method, Endpoint]),
 	    lists:foreach(fun (Elem) ->
@@ -108,12 +114,14 @@ concat_with_delim([A],    _D) -> A;
 concat_with_delim([A, B],  D) -> A ++ D ++ B;
 concat_with_delim([A | B], D) -> A ++ D ++ concat_with_delim(B, D).
 
-info_to_json({house, MaxPower, CurrentUsage, ChildInfo}) ->
+info_to_json({house, MaxPower, CurrentUsage, Status, ChildInfo, TripApp}) ->
     OwnInfo = io_lib:format("{ \"type\": \"house\", "
 			    ++ "\"max_power\": ~f, "
 			    ++ "\"current_usage\": ~f, "
+				++ "\"status\": \"~s\", "
+				++ "\"trip_app\": \"~s\", "
 			    ++ "\"children\": [", 
-			    [float(MaxPower), float(CurrentUsage)]),
+			    [float(MaxPower), float(CurrentUsage), atom_to_list(Status), TripApp]),
     ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end, ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
 info_to_json({breaker, Name, MaxPower, CurrentUsage, Status, ChildInfo}) ->
@@ -133,6 +141,8 @@ info_to_json({appliance, Name, Power, Status}) ->
 		  ++ "\"current_usage\": ~f, "
 		  ++ "\"status\": \"~s\" }",
 		  [Name, float(Power), atom_to_list(Status)]);
+info_to_json({tripInfo, TripApp}) ->
+	io_lib:format("{ \"trip_appliance\": \"~s\"}", [TripApp]);
 info_to_json(V) ->
     io:format("Unknown info shape: ~w", [V]),
     io_lib:format("{ \"type\": \"error\" }").

@@ -27,7 +27,7 @@ power_loop(Power, Clock, ListenerPid) ->
     receive 
         {exit} -> ok;
         {Pid} when is_pid(Pid) -> power_loop(Power, Clock, Pid)
-    after round(Clock * 10000) -> 
+    after round(Clock * 1000 * rand:uniform(10)) ->
         NewPower = rand:normal(Power, Power / 5),
         case NewPower =< 0 of
             true -> ListenerPid ! {power, self(), 0};
@@ -53,10 +53,7 @@ loop(CurrentState) ->
         % shutdown current appliance
         {removeNode, Name} ->
             io:format("Removing appliance: ~p~n", [Name]),
-            case Status of
-                on -> ParentPID ! {powerUpdate, off, {Name, Power}};
-                off -> none
-            end;
+            ParentPID ! {powerUpdate, removal, Status, {Name, Power, self()}};
         % trying to shutdown other appliance
         {removeNode, OtherName} ->
             io:format("Appliance ~p ignoring removal of ~p~n", [Name, OtherName]),
@@ -92,6 +89,10 @@ loop(CurrentState) ->
                 on -> ParentPID ! {powerUpdate, off, {Name, Power}}
             end,
             loop({Name, ParentPID, Power, off, PowerPid});
+        % remove as result of trip
+        {tripResolve, removeNode, Name} ->
+            io:format("Removing appliance as resolution to trip: ~p~n", [Name]),
+            ParentPID ! {powerUpdate, removal, Status, {Name, Power, self()}};
         
         {exit} -> 
             io:format("Ending appliance: ~p~n", [Name]),
