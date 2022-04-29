@@ -12,21 +12,37 @@
 -module(admin).
 -export([compile/0, start/2, stop/0]).
 
-% Compiles all project files
+%%--------------------------------------------------------------------
+%% Function: compile/0
+%% Description: Compiles all project Erlang files
+%% Returns: ok
+%%--------------------------------------------------------------------
 compile() ->
     compile:file(house),
     compile:file(httpserver),
     compile:file(breaker),
     compile:file(appliance),
-    complete.
+    ok.
 
-% Starts a house and associated server
+%%--------------------------------------------------------------------
+%% Function: start/2
+%% Description: Starts the house and http server
+%% Inputs: MaxPower (float) - Maximum power available to house
+%%         Port (int) - Port at which to start the server
+%% Returns: ok
+%%--------------------------------------------------------------------
 start(MaxPower, Port) ->
     H = house:start(MaxPower),
     register(house, H),
     S = httpserver:start(Port, H),
-    register(houseserver, S).
+    register(houseserver, S),
+    ok.
 
+%%--------------------------------------------------------------------
+%% Function: stop/0
+%% Description: Shuts down house and server
+%% Returns: ok
+%%--------------------------------------------------------------------
 % Stops house and associated server
 stop() ->
     HousePid = whereis(house),
@@ -35,4 +51,4 @@ stop() ->
     unregister(houseserver),
     HousePid ! {exit},
     ServerPid ! {exit},
-    true.
+    ok.

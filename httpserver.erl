@@ -60,7 +60,7 @@ handle(Conn, State) ->
 	    gen_tcp:send(Conn, html_response(IndexBinary));
 	{"GET", "/info"} ->
      		InfoText = info_to_json(house:get_info(HousePid)),
-			io:format("json response: ~p~n", [json_response(list_to_binary(InfoText))]),
+			% io:format("json response: ~p~n", [json_response(list_to_binary(InfoText))]),
      	    gen_tcp:send(Conn, json_response(list_to_binary(InfoText)));
 	{"POST", "/new_appliance"} ->
 	    Parent = proplists:get_value("parent", KeyValuePairs),
