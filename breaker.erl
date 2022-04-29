@@ -8,7 +8,7 @@
 %%%     appliances doesn't exceed a breaker's limit, and handle
 %%%     requests to create, turn on, and turn off individual appliances.
 %%% Processes of this module can only be created by House processes.
-%%% Able to create processes of Appliance modles.
+%%% Able to create processes of Appliance modules.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(breaker).
