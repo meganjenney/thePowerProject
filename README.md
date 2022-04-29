@@ -11,7 +11,8 @@ complete
 > admin:start(10.0, 8080).    % create a new house with 10.0 amps of available
                               % current and start the server running on port
                               % 8080
-
+Starting on port 8080
+ok
 ```
 Now, modifications to the `house`, will be reflected on
 the webpage hosted by the `httpserver`.
@@ -28,7 +29,7 @@ displays the history of power consumption over time.
 To shutdown the web server, type:
 ``` erlang
 > admin:stop().
-true
+ok
 ```
 
 ## File Contents
