@@ -89,9 +89,10 @@ rpc(Pid, Request) ->
 %%--------------------------------------------------------------------
 check_capacity({MaxPower, CurrentUsage, Status, Children, TripApp},
                 {AppName, AppPower}) ->
-    case MaxPower >= (CurrentUsage+AppPower) of
+    case MaxPower >= (CurrentUsage + AppPower) of
         true ->
-            loop({MaxPower, CurrentUsage+AppPower, Status, Children, TripApp});
+            NewPower = CurrentUsage + AppPower
+            loop({MaxPower, NewPower, Status, Children, TripApp});
         false -> forward_message({turnOff, all}, Children),
                 loop({MaxPower, 0, tripped, Children, AppName})
     end.
