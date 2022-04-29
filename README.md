@@ -17,13 +17,18 @@ Now, modifications to the `house`, will be reflected on
 the webpage hosted by the `httpserver`.
 
 You can see the webpage by navigating to `localhost` at port 8080 
-(`0.0.0.0:8080`) in your browser. 
+(`0.0.0.0:8080`) in your browser. Each appliance, breaker, and the house are 
+represented in a tree on the user interface, followed by the current power 
+usage and the maximum power usage if applicable. When you hover over nodes in 
+the tree, options will appear as appropriate for that node type, as well 
+highlighting that node's power consumption in the graph at the right, which 
+displays the history of power consumption over time.
+
 
 To shutdown the web server, type:
 ``` erlang
 > admin:stop().
 true
->
 ```
 
 ## File Contents
