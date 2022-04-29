@@ -4,7 +4,7 @@
 %%% Concurrent Programming (CS21)
 %%% Tufts University Spring 2022
 %%% S. Bentley, S. Cohen, M. Jenney
-%%% 
+%%%
 %%% This module defines ways for a server to handle different types
 %%%     of messages from a user and send them to an associated House
 %%%     process.
@@ -38,9 +38,10 @@ start(Port, HousePid) ->
 
 %%--------------------------------------------------------------------
 %% Function: info_to_json
-%% Description: 
-%% Inputs: 
-%% Returns: 
+%% Description: converts the state of a house, breaker, or appliance
+%%              into a JSON string
+%% Inputs: the state of a simulation object as produced by the info message
+%% Returns: a JSON string representing the object passed into the function
 %%--------------------------------------------------------------------
 info_to_json({house, MaxPower, CurrentUsage, Status, ChildInfo, TripApp}) ->
     OwnInfo = io_lib:format("{ \"type\": \"house\", "
@@ -48,7 +49,7 @@ info_to_json({house, MaxPower, CurrentUsage, Status, ChildInfo, TripApp}) ->
 		++ "\"current_usage\": ~f, "
 		++ "\"status\": \"~s\", "
 		++ "\"trip_app\": \"~s\", "
-		++ "\"children\": [", 
+		++ "\"children\": [",
 		[float(MaxPower), float(CurrentUsage), atom_to_list(Status), TripApp]),
     ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end,ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
@@ -59,7 +60,7 @@ info_to_json({breaker, Name, MaxPower, CurrentUsage, Status, ChildInfo}) ->
 			    ++ "\"current_usage\": ~f, "
 			    ++ "\"status\": \"~s\", "
 			    ++ "\"children\": [",
-			    [Name, float(MaxPower), float(CurrentUsage), 
+			    [Name, float(MaxPower), float(CurrentUsage),
 			     atom_to_list(Status)]),
     ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end,ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
@@ -83,28 +84,28 @@ info_to_json(V) ->
 %% Function: loop/2
 %% Description: Message receiving loop for the http server interface
 %% Inputs: Sock (Socket) - Web socket for server
-%%		   State (Tuple) - Representation of UI's HTML source and the process 
-%%						   identifier for the house node
+%%		   State (Tuple) - Representation of UI's HTML source and the process
+%%                                 identifier for the house node
 %%--------------------------------------------------------------------
 loop(Sock, State) ->
     receive
-		{exit} ->
-			gen_tcp:close(Sock),
-			exit(self(), normal);
-		_ -> ok
+	{exit} ->
+	    gen_tcp:close(Sock),
+	    exit(self(), normal);
+	_ -> ok
     after 0 -> ok
     end,
-	{Atom, ConnReason} = gen_tcp:accept(Sock, 1000),
-	case Atom of
-		ok -> Handler = spawn(fun () -> handle(ConnReason, State) end),
-						gen_tcp:controlling_process(ConnReason, Handler);
-		error -> ok
-	end,
+    {Atom, ConnReason} = gen_tcp:accept(Sock, 1000),
+    case Atom of
+	ok -> Handler = spawn(fun () -> handle(ConnReason, State) end),
+	      gen_tcp:controlling_process(ConnReason, Handler);
+	error -> ok
+    end,
     loop(Sock, State).
 
 %%--------------------------------------------------------------------
 %% Function: parse_query_string/1
-%% Description: Parse string into Key Value tuples
+%% Description: Parse query string into Key Value tuples
 %% Inputs: Str (string) - String to parse
 %% Returns: List of {Key, Value} tuples
 %%--------------------------------------------------------------------
@@ -117,9 +118,12 @@ parse_query_string(Str) ->
 
 %%--------------------------------------------------------------------
 %% Function: handle/2
-%% Description: Parse string into Key Value tuples
-%% Inputs: Str (string) - String to parse
-%% Returns: List of {Key, Value} tuples
+%% Description: Handle a user's HTTP request
+%% Inputs: Conn (Socket) -- representing the connected client's socket
+%%                          connection
+%%         State (Tuple) -- Representation of UI's HTML source and process
+%%                          identifier for the house node
+%% Returns: does not return
 %%--------------------------------------------------------------------
 handle(Conn, State) ->
     {_IndexBinary, HousePid} = State,
@@ -178,9 +182,9 @@ handle(Conn, State) ->
 
 %%--------------------------------------------------------------------
 %% Function: json_response/1
-%% Description: 
-%% Inputs: B (type) - 
-%% Returns: 
+%% Description: Creates a JSON response from the input binary string
+%% Inputs: B (Binary String) - the content of the HTTP message
+%% Returns: A binary string conforming to the HTTP protocol
 %%--------------------------------------------------------------------
 json_response(B) ->
     iolist_to_binary(
@@ -190,9 +194,9 @@ json_response(B) ->
 
 %%--------------------------------------------------------------------
 %% Function: html_response/1
-%% Description: 
-%% Inputs: B (type)
-%% Returns: 
+%% Description: Creates a HTML response from the input binary string
+%% Inputs: B (Binary String) - the content of the HTTP message
+%% Returns: A binary string conforming to the HTTP protocol
 %%--------------------------------------------------------------------
 html_response(B) ->
     iolist_to_binary(
@@ -202,8 +206,12 @@ html_response(B) ->
 
 %%--------------------------------------------------------------------
 %% Function: concat_with_delim/1
-%% Description: Starts the http server
-%% Inputs: 
+%% Description: Concat a list of strings placing a delimeter between
+%%              each element, but not after the last element
+%%              Example:
+%%              concat_with_delim(["a", "b", "c"], ", ")
+%%                 returns "a, b, c"
+%% Inputs: List of strings
 %% Returns: String
 %%--------------------------------------------------------------------
 concat_with_delim([],     _D) -> "";
