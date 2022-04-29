@@ -8,8 +8,7 @@
 %%% This module is the basis for a house process which manages the
 %%%     entire simulation, acting as head of a supervisor tree in the
 %%%     creation, turning on, and turning off of appliances either as
-%%%     requested by a user or as needed according to power
-%%%     consumption.
+%%%     requested by a user or as needed according to power consumption.
 %%% Integrates with user interface module to provide user visibility
 %%%     and control.
 %%% Able to create processes of Breaker and Appliance modules.
@@ -40,6 +39,7 @@ start(MaxPower) ->
 %% Returns: Info (tuple) - Nested tuple of house and subprocess state info
 %%--------------------------------------------------------------------
 get_info(Pid) -> rpc(Pid, info).
+
 
 %%====================================================================
 %% Internal helper functions
@@ -105,14 +105,14 @@ check_capacity({MaxPower, CurrentUsage, Status, Children, TripApp},
 %% Inputs: {MaxPower, CurrentUsage, Status, Children, TripApp}
 %%         MaxPower (float) - Maximum available power for house in Amps
 %%         CurrentUsage (float) - Current house power in Amps
-%%         Status (atom) - House state, either on, tripped, or shutdown
+%%         Status (atom) - House state, either on or tripped
 %%         Children (List of {ListenerPid, Ref}) - Monitors for child processes
-%%         TripApp %%%TODO
+%%         TripApp (string) - name of appliance that caused a trip
 %%--------------------------------------------------------------------
 loop(CurrentState) ->
     {MaxPower, CurrentUsage, Status, Children, TripApp} = CurrentState,
     receive
-        %% info for UI
+        % Send node information for user interface
         {info, From} ->
             RequestInfo = fun({ChildPid, _Ref}) ->
                     rpc(ChildPid, info)
@@ -121,77 +121,87 @@ loop(CurrentState) ->
             NewS = {house, MaxPower, CurrentUsage, Status, ChildInfo, TripApp},
             From ! {self(), NewS},
             loop(CurrentState);
+
+        %% Structural behavior
+        % Create direct child appliance
         {createApp, "house", Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
             loop({MaxPower, CurrentUsage, Status, [Pid | Children], TripApp});
-        % add appliance on breaker
+        % Create appliance on breaker child
         {createApp, BreakerName, Name, Power, Clock} ->
             io:format("Forwarding appliance creation: ~p~n", [Name]),
-            forward_message({createApp,BreakerName,Name,Power,Clock},Children),
+            forward_message({createApp, BreakerName, Name, Power, Clock},
+                             Children),
             loop(CurrentState);
-        % remove appliance
+        % Forward message to remove child node
         {removeNode, NodeName} ->
             io:format("House forwarding remove node: ~p~n", [NodeName]),
             forward_message({removeNode, NodeName}, Children),
             loop(CurrentState);
-        % add breaker
+        % Create breaker child
         {createBreaker, Name, MaxBreakerPower} ->
             Pid = breaker:start(Name, MaxBreakerPower),
             io:format("Created Breaker: ~s (~p)~n", [Name, Pid]),
             loop({MaxPower, CurrentUsage, Status, [Pid | Children], TripApp});
         
-        %% power status
-        % turn on appliance
+        %% Power status update behavior
+        % Turn on appliance
         {turnOn, AppName} ->
             forward_message({turnOn, AppName}, Children),
             loop(CurrentState);
-        % turn off applicance
+        % Turn off appliance
         {turnOff, AppName} ->
             forward_message({turnOff, AppName}, Children),
             loop(CurrentState);
-        % power usage update
+        % Respond to child on power update
         {powerUpdate, on, AppInfo} ->
             check_capacity(CurrentState, AppInfo);
+        % Respond to child off power update
         {powerUpdate, off, {_AppName, AppPower}} ->
             loop({MaxPower, CurrentUsage-AppPower, Status, Children, TripApp});
+        % Respond to child removal power update when child on
         {powerUpdate, removal, on, {AppName, AppPower, AppPid}} ->
             io:format("house registers removal of appliance ~p~n", [AppName]),
-            case Status == on of
-                true -> NewUsage = CurrentUsage - AppPower,
+            case Status of
+                on -> NewUsage = CurrentUsage - AppPower,
                     loop({MaxPower, NewUsage, Status,
-                        proplists:delete(AppPid, Children), TripApp});
-                false -> 
+                          proplists:delete(AppPid, Children), TripApp});
+                _Other -> 
                     loop({MaxPower, CurrentUsage, Status,
-                        proplists:delete(AppPid, Children),TripApp})
+                          proplists:delete(AppPid, Children),TripApp})
             end;
+        % Respond to child removal power update when child off
         {powerUpdate, removal, off, {AppName, _AppPower, AppPid}} ->
             io:format("house registers removal of appliance ~p~n", [AppName]),
             loop({MaxPower, CurrentUsage, Status,
-                proplists:delete(AppPid, Children), TripApp});
-        % breaker trip
+                  proplists:delete(AppPid, Children), TripApp});
+        % Respond to breaker trip
         {trip, BreakerName, BreakerUsage, AppName} ->
             io:format("~p on breaker ~p has caused a trip~n",
                 [AppName, BreakerName]),
             loop({MaxPower,CurrentUsage-BreakerUsage,Status,Children,TripApp});
-        % trip resolution
+        % Respond to breaker trip resolution
         {tripResolve, Decision, TripApp} ->
-            case Decision == "yes" of
-                true ->
+            case Decision of
+                "yes" ->
                     forward_message({tripResolve,removeNode,TripApp},Children);
-                false -> ok
+                _Other -> ok
             end,
             io:format("after decision check"),
             loop({MaxPower, CurrentUsage, on, Children, "none"});
 
+        % Exit all children and then self
         {exit} ->
             io:format("Ending house and killing all children~n", []),
             exit_children(Children),
             exit(self(), normal);
+        % Remove child monitor if process dies
         {'DOWN', _Ref, process, Pid, normal} ->
             io:format("Process ~p died~n", [Pid]),
             loop({MaxPower, CurrentUsage, Status,
                 proplists:delete(Pid, Children), TripApp});
+        % Process unknown message
         Other ->
             io:format("Received: ~w~n", [Other]),
             loop(CurrentState)

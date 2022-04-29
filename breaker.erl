@@ -79,8 +79,8 @@ rpc(Pid, Request) ->
 %%--------------------------------------------------------------------
 check_capacity({Name, ParentPid, MaxPower, CurrentUsage, Status, Children},
                {AppName, AppPower}) ->
-    case Status == on of
-        true ->
+    case Status of
+        on ->
             case MaxPower >= (CurrentUsage+AppPower) of
                 true  -> ParentPid ! {powerUpdate, on, {AppName, AppPower}},
                         loop({Name, ParentPid, MaxPower, CurrentUsage+AppPower,
@@ -89,7 +89,7 @@ check_capacity({Name, ParentPid, MaxPower, CurrentUsage, Status, Children},
                         ParentPid ! {trip, Name, CurrentUsage, AppName},
                         loop({Name, ParentPid, MaxPower, 0, tripped, Children})
             end;
-        false ->
+        _Other ->
             io:format("Tried to turn on appliance ~s on tripped breaker ~s~n",
                       [AppName, Name]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, Status, Children})
