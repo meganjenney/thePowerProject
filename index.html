@@ -372,7 +372,7 @@ function populate_tree(root, data) {
     if(data.type == "house") {
         if(data.status == "tripped") {
             let child = create_node(data, ["resolve trip", "new appliance",
-                                            "new breaker", "delete"]);
+                                            "new breaker"]);
             let ul = document.createElement('ul');
             child.appendChild(ul);
 
@@ -382,8 +382,7 @@ function populate_tree(root, data) {
                 populate_tree(ul, child);
             }
         } else {
-            let child = create_node(data, ["new appliance", "new breaker",
-                                            "delete"]);
+            let child = create_node(data, ["new appliance", "new breaker"]);
             let ul = document.createElement('ul');
             child.appendChild(ul);
 

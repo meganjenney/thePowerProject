@@ -17,7 +17,7 @@ Now, modifications to the `house`, will be reflected on
 the webpage hosted by the `httpserver`.
 
 You can see the webpage by navigating to `localhost` at port 8080 
-(`0.0.0.0:8080`) in your browser.
+(`0.0.0.0:8080`) in your browser. 
 
 To shutdown the web server, type:
 ``` erlang
