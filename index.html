@@ -292,43 +292,50 @@ function request_action(url) {
     xmlHttp.send(null);
 }
 
-function handle_click(node_name, button_name) {
+function handle_click(node_name, button_name, trip_app) {
     if(button_name == "new appliance") {
-	let parent = node_name;
-	let name = prompt("appliance name");
-	let power = prompt("appliance power");
-	if(!/\d+\.\d+/.test(power)) {
-	    alert("Invalid float literal: " + power)
-	    return;
-	}
+        let parent = node_name;
+        let name = prompt("appliance name");
+        let power = prompt("appliance power");
+        if(!/\d+\.\d+/.test(power)) {
+            alert("Invalid float literal: " + power)
+            return;
+        }
+        let clock = "1.0";
+        request_action(`/new_appliance?parent=${parent}&name=${name}&power=${power}&clock=${clock}`);
 
-	let clock = "1.0";
-	request_action(`/new_appliance?parent=${parent}&name=${name}&power=${power}&clock=${clock}`);
     } else if(button_name == "new breaker") {
-	let name = prompt("breaker name");
-	let power = prompt("breaker maximum power");
-	if(!/\d+\.\d+/.test(power)) {
-	    alert("Invalid float literal: " + power)
-	    return;
-	}
+        let name = prompt("breaker name");
+        let power = prompt("breaker maximum power");
+        if(!/\d+\.\d+/.test(power)) {
+            alert("Invalid float literal: " + power)
+            return;
+        }
+        request_action(`/new_breaker?name=${name}&power=${power}`);
 
-	request_action(`/new_breaker?name=${name}&power=${power}`);
     } else if(button_name == "delete") {
-	let name = node_name;
-	request_action(`/delete?name=${name}`);
-	remove_from_history(name);
+        let name = node_name;
+        request_action(`/delete?name=${name}`);
+        remove_from_history(name);
+
     } else if(button_name == "turn on") {
-	let name = node_name;
-	request_action(`/turn_on?name=${name}`);
+        let name = node_name;
+        request_action(`/turn_on?name=${name}`);
+
     } else if(button_name == "turn off") {
-	let name = node_name;
-	request_action(`/turn_off?name=${name}`);
+        let name = node_name;
+        request_action(`/turn_off?name=${name}`);
+
+    } else if(button_name == "resolve trip") {
+        let handle = prompt("Would you like to remove the appliance which caused the trip?");
+        request_action(`/resolve?app=${trip_app}&handle=${handle}`);
     }
 }
 
 function create_node(data, buttons) {
     let name = data.name ? data.name : "house";
     let status = data.status ? data.status : "";
+    let trip_app = data.trip_app ? data.trip_app : "";
     let usage_string = data.current_usage.toString()
 	+ (data.max_power ? "A / " + data.max_power.toString() : "A");
 
@@ -343,11 +350,12 @@ function create_node(data, buttons) {
     let buttons_span = document.createElement('span');
     buttons_span.setAttribute('class', 'buttons');
     for(const button_name of buttons) {
-	let link_elt = document.createElement('a');
-	link_elt.textContent = button_name;
-	link_elt.setAttribute('onclick', 'handle_click(\'' +
-			      name + '\', \'' + button_name + '\')');
-	buttons_span.appendChild(link_elt);
+        let link_elt = document.createElement('a');
+        link_elt.textContent = button_name;
+        link_elt.setAttribute('onclick', 'handle_click(\'' +
+                    name + '\', \'' + button_name + '\', \'' +
+                    trip_app + '\')');
+        buttons_span.appendChild(link_elt);
     }
     li.appendChild(label_span);
     li.appendChild(buttons_span);
@@ -356,20 +364,43 @@ function create_node(data, buttons) {
 
 function populate_tree(root, data) {
 
-    if(data.type == "house" || data.type == "breaker") {
-	let child = create_node(data, ["new appliance", "new breaker", "delete"]);
-	let ul = document.createElement('ul');
-	child.appendChild(ul);
+    if(data.type == "house") {
+        if(data.status == "tripped") {
+            let child = create_node(data, ["resolve trip", "new appliance", "new breaker", "delete"]);
+            let ul = document.createElement('ul');
+            child.appendChild(ul);
 
-	root.appendChild(child);
+            root.appendChild(child);
 
-	for(const child of data.children) {
-	    populate_tree(ul, child);
-	}
+            for(const child of data.children) {
+                populate_tree(ul, child);
+            }
+        } else {
+            let child = create_node(data, ["new appliance", "new breaker", "delete"]);
+            let ul = document.createElement('ul');
+            child.appendChild(ul);
+
+            root.appendChild(child);
+
+            for(const child of data.children) {
+                populate_tree(ul, child);
+            }
+        }
+	
     } else if(data.type == "appliance") {
-	let child = create_node(data, ["turn on", "turn off", "delete"]);
+        let child = create_node(data, ["turn on", "turn off", "delete"]);
+        root.appendChild(child);
 
-	root.appendChild(child);
+    } else if(data.type == "breaker") {
+        let child = create_node(data, ["new appliance", "delete"]);
+        let ul = document.createElement('ul');
+        child.appendChild(ul);
+
+        root.appendChild(child);
+
+        for(const child of data.children) {
+            populate_tree(ul, child);
+        }
     }
 }
 

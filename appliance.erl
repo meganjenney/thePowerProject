@@ -89,6 +89,10 @@ loop(CurrentState) ->
                 on -> ParentPID ! {powerUpdate, off, {Name, Power}}
             end,
             loop({Name, ParentPID, Power, off, PowerPid});
+        % remove as result of trip
+        {tripResolve, removeNode, Name} ->
+            io:format("Removing appliance as resolution to trip: ~p~n", [Name]),
+            ParentPID ! {powerUpdate, removal, Status, {Name, Power, self()}};
         
         {exit} -> 
             io:format("Ending appliance: ~p~n", [Name]),

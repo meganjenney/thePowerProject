@@ -44,7 +44,7 @@ check_capacity({Name, ParentPid, MaxPower, CurrentUsage, Status, Children}, {App
                 true  -> ParentPid ! {powerUpdate, on, {AppName, AppPower}},
                         loop({Name, ParentPid, MaxPower, CurrentUsage+AppPower, Status, Children});
                 false -> forward_message({turnOff, all}, Children),
-                        ParentPid ! {trip, Name, CurrentUsage},
+                        ParentPid ! {trip, Name, CurrentUsage, AppName},
                         loop({Name, ParentPid, MaxPower, 0, tripped, Children})
             end;
         false ->
@@ -122,8 +122,13 @@ loop(CurrentState) ->
                         loop({Name, ParentPid, MaxPower, CurrentUsage-AppPower, Status, proplists:delete(AppPid, Children)});
                 false -> loop({Name, ParentPid, MaxPower, CurrentUsage, Status, proplists:delete(AppPid, Children)})
             end;
-        {powerUpdate, removal, off, {_AppName, _AppPower, AppPid}} ->
+        {powerUpdate, removal, off, {AppName, _AppPower, AppPid}} ->
+            io:format("house registers removal of ~p~n", [AppName]),
             loop({Name, ParentPid, MaxPower, CurrentUsage, Status, proplists:delete(AppPid, Children)});
+        {tripResolve, removeNode, NodeName} ->
+            io:format("Breaker ~p forwarding remove node: ~p~n", [Name, NodeName]),
+            forward_message({removeNode, NodeName}, Children),
+            loop({Name, ParentPid, MaxPower, CurrentUsage, on, Children});
         
         {exit} ->
             io:format("Ending breaker ~p and killing all children~n", [Name]),
