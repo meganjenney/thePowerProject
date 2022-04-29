@@ -53,10 +53,7 @@ loop(CurrentState) ->
         % shutdown current appliance
         {removeNode, Name} ->
             io:format("Removing appliance: ~p~n", [Name]),
-            case Status of
-                on -> ParentPID ! {powerUpdate, off, {Name, Power}};
-                off -> none
-            end;
+            ParentPID ! {powerUpdate, removal, Status, {Name, Power, self()}};
         % trying to shutdown other appliance
         {removeNode, OtherName} ->
             io:format("Appliance ~p ignoring removal of ~p~n", [Name, OtherName]),

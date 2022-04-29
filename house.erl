@@ -21,7 +21,7 @@
 
 % Spawn house process
 start(MaxPower) ->
-    spawn(?MODULE, loop, [{MaxPower, 0, []}]).
+    spawn(?MODULE, loop, [{MaxPower, 0, on, []}]).
 
 % Helper function to tell all children processes to exit
 exit_children([]) -> success;
@@ -42,16 +42,16 @@ rpc(Pid, Request) ->
 
 get_info(Pid) -> rpc(Pid, info).
 
-checkCapacity({MaxPower, CurrentUsage, Children}, {_AppName, AppPower}) ->
+check_capacity({MaxPower, CurrentUsage, Status, Children}, {_AppName, AppPower}) ->
     case MaxPower >= (CurrentUsage+AppPower) of
-        true -> loop({MaxPower, CurrentUsage+AppPower, Children});
+        true -> loop({MaxPower, CurrentUsage+AppPower, Status, Children});
         false -> forward_message({turnOff, all},  Children),
-                loop({MaxPower, 0, Children})
+                loop({MaxPower, 0, tripped, Children})
     end.
 
 % Message receiving loop with debug code
 loop(CurrentState) ->
-    {MaxPower, CurrentUsage, Children} = CurrentState,
+    {MaxPower, CurrentUsage, Status, Children} = CurrentState,
     receive
         %% info for UI
         {info, From} ->
@@ -59,12 +59,12 @@ loop(CurrentState) ->
                     rpc(ChildPid, info)
                 end,
             ChildInfo = lists:map(RequestInfo, Children),
-            From ! {self(), {house, MaxPower, CurrentUsage, ChildInfo}},
+            From ! {self(), {house, MaxPower, CurrentUsage, Status, ChildInfo}},
             loop(CurrentState);
         {createApp, "house", Name, Power, Clock} -> 
             Pid = appliance:start_appliance(Name, Power, Clock),
             io:format("Created Pid: ~p~n", [Pid]),
-            loop({MaxPower, CurrentUsage, [Pid | Children]});
+            loop({MaxPower, CurrentUsage, Status, [Pid | Children]});
         % add appliance on breaker
         {createApp, BreakerName, Name, Power, Clock} ->
             io:format("Forwarding appliance creation: ~p~n", [Name]),
@@ -79,7 +79,7 @@ loop(CurrentState) ->
         {createBreaker, Name, MaxBreakerPower} ->
             Pid = breaker:start(Name, MaxBreakerPower),
             io:format("Created Breaker: ~s (~p)~n", [Name, Pid]),
-            loop({MaxPower, CurrentUsage, [Pid | Children]});
+            loop({MaxPower, CurrentUsage, Status, [Pid | Children]});
         
         %% power status
         % turn on appliance
@@ -92,14 +92,20 @@ loop(CurrentState) ->
             loop(CurrentState);
         % power usage update
         {powerUpdate, on, AppInfo} ->
-            checkCapacity(CurrentState, AppInfo);
+            check_capacity(CurrentState, AppInfo);
         {powerUpdate, off, {_AppName, AppPower}} ->
-            % TODO: wait until have more power if maxed
-            loop({MaxPower, CurrentUsage-AppPower, Children});
+            loop({MaxPower, CurrentUsage-AppPower, Status, Children});
+        {powerUpdate, removal, on, {_AppName, AppPower, AppPid}} ->
+            case Status == on of
+                true -> loop({MaxPower, CurrentUsage-AppPower, Status, proplists:delete(AppPid, Children)});
+                false -> loop({MaxPower, CurrentUsage, Status, proplists:delete(AppPid, Children)})
+            end;
+        {powerUpdate, removal, off, {_AppName, _AppPower, AppPid}} ->
+            loop({MaxPower, CurrentUsage, Status, proplists:delete(AppPid, Children)});
         % breaker trip
         {trip, BreakerName, BreakerUsage} ->
             io:format("Breaker ~p on house has tripped~n", [BreakerName]),
-            loop({MaxPower, CurrentUsage-BreakerUsage, Children});
+            loop({MaxPower, CurrentUsage-BreakerUsage, Status, Children});
 
         {exit} ->
             io:format("Ending house and killing all children~n", []),
@@ -107,7 +113,7 @@ loop(CurrentState) ->
             exit(self(), normal);
         {'DOWN', _Ref, process, Pid, normal} ->
             io:format("Process ~p died~n", [Pid]),
-            loop({MaxPower, CurrentUsage, proplists:delete(Pid, Children)});            
+            loop({MaxPower, CurrentUsage, Status, proplists:delete(Pid, Children)});            
         Other ->
             io:format("Received: ~w~n", [Other]),
             loop(CurrentState)

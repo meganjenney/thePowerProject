@@ -108,12 +108,13 @@ concat_with_delim([A],    _D) -> A;
 concat_with_delim([A, B],  D) -> A ++ D ++ B;
 concat_with_delim([A | B], D) -> A ++ D ++ concat_with_delim(B, D).
 
-info_to_json({house, MaxPower, CurrentUsage, ChildInfo}) ->
+info_to_json({house, MaxPower, CurrentUsage, Status, ChildInfo}) ->
     OwnInfo = io_lib:format("{ \"type\": \"house\", "
 			    ++ "\"max_power\": ~f, "
 			    ++ "\"current_usage\": ~f, "
+				++ "\"status\": \"~s\", "
 			    ++ "\"children\": [", 
-			    [float(MaxPower), float(CurrentUsage)]),
+			    [float(MaxPower), float(CurrentUsage), atom_to_list(Status)]),
     ChildrenJson = lists:map(fun (Child) -> info_to_json(Child) end, ChildInfo),
     OwnInfo ++ concat_with_delim(ChildrenJson, ", ") ++ "] }";
 info_to_json({breaker, Name, MaxPower, CurrentUsage, Status, ChildInfo}) ->
