@@ -67,7 +67,7 @@ forward_message(Message, [{Pid, _Ref} | Rest]) ->
 rpc(Pid, Request) ->
     Pid ! { Request, self() },
     receive
-	{Pid, Response} -> Response
+	    {Pid, Response} -> Response
     end.
 
 %%--------------------------------------------------------------------

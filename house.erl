@@ -15,33 +15,77 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -module(house).
+%% Client functions for house
 -export([start/1, get_info/1]).
-
+%% Internal appliance process function
 -export([loop/1]).
 
-% Spawn house process
+%%====================================================================
+%% Client functions
+%%====================================================================
+%%--------------------------------------------------------------------
+%% Function: start/1
+%% Description: Starts the house process
+%% Inputs: MaxPower (float) - Maximum power available to the house in Amps
+%% Returns: Pid - Identifier for house process
+%%--------------------------------------------------------------------
 start(MaxPower) ->
     spawn(?MODULE, loop, [{MaxPower, 0, on, [], "none"}]).
 
-% Helper function to tell all children processes to exit
+%%--------------------------------------------------------------------
+%% Function: get_info/1
+%% Description: Gets house and subtree information
+%% Inputs: Pid (pid) - Process identifier for house
+%% Returns: Info (tuple) - Nested tuple of house and subprocess state info
+%%--------------------------------------------------------------------
+get_info(Pid) -> rpc(Pid, info).
+
+%%====================================================================
+%% Internal helper functions
+%%====================================================================
+%%--------------------------------------------------------------------
+%% Function: exit_children/1
+%% Description: Sends exit messages to all children processes
+%% Inputs: List of {ListenerPid, Ref} for children processes
+%% Returns: success
+%%--------------------------------------------------------------------
 exit_children([]) -> success;
 exit_children([{Pid, _Ref} | Rest]) ->
     Pid ! {exit},
     exit_children(Rest).
 
+%%--------------------------------------------------------------------
+%% Function: forward_message/2
+%% Description: Sends messages to all children processes without response
+%% Inputs: Message to forward to children
+%%         List of {ListenerPid, Ref} for children processes
+%% Returns: success
+%%--------------------------------------------------------------------
 forward_message(_Message, []) -> success;
 forward_message(Message, [{Pid, _Ref} | Rest]) ->
     Pid ! Message,
     forward_message(Message, Rest).
 
+%%--------------------------------------------------------------------
+%% Function: rpc/2
+%% Description: Sends messages to process and waits for response
+%% Inputs: Pid of process to send message to
+%%         Request to forward to process
+%% Returns: success
+%%--------------------------------------------------------------------
 rpc(Pid, Request) ->
     Pid ! { Request, self() },
     receive
-	{Pid, Response} -> Response
+	    {Pid, Response} -> Response
     end.
 
-get_info(Pid) -> rpc(Pid, info).
-
+%%--------------------------------------------------------------------
+%% Function: check_capacity/2
+%% Description: Checks whether child power update is within available power 
+%%              and updates parent
+%% Inputs: CurrentState (tuple) - Current state variables of house
+%%         {AppName, AppPower} - New power consumption from child
+%%--------------------------------------------------------------------
 check_capacity({MaxPower, CurrentUsage, Status, Children, TripApp},
                 {AppName, AppPower}) ->
     case MaxPower >= (CurrentUsage+AppPower) of
@@ -51,7 +95,19 @@ check_capacity({MaxPower, CurrentUsage, Status, Children, TripApp},
                 loop({MaxPower, 0, tripped, Children, AppName})
     end.
 
-% Message receiving loop with debug code
+%%====================================================================
+%% Internal process function
+%%====================================================================
+%%--------------------------------------------------------------------
+%% Function: loop/1
+%% Description: Receives and handles messages for house process
+%% Inputs: {MaxPower, CurrentUsage, Status, Children, TripApp}
+%%         MaxPower (float) - Maximum available power for house in Amps
+%%         CurrentUsage (float) - Current house power in Amps
+%%         Status (atom) - House state, either on, tripped, or shutdown
+%%         Children (List of {ListenerPid, Ref}) - Monitors for child processes
+%%         TripApp %%%TODO
+%%--------------------------------------------------------------------
 loop(CurrentState) ->
     {MaxPower, CurrentUsage, Status, Children, TripApp} = CurrentState,
     receive
