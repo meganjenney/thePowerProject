@@ -185,7 +185,7 @@ loop(CurrentState) ->
         {powerUpdate, removal, on, {AppName, AppPower, AppPid}} ->
             case Status of
                 on -> ParentPid ! {powerUpdate, removal, on, 
-                                  {AppName, AppPower}},
+                                  {AppName, AppPower, AppPid}},
                     loop({Name, ParentPid, MaxPower, CurrentUsage-AppPower, 
                           Status, proplists:delete(AppPid, Children)});
                 _Other ->
